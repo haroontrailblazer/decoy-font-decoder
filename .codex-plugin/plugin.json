@@ -1,0 +1,42 @@
+{
+  "name": "decoy-font-decoder",
+  "version": "1.0.0",
+  "description": "Run a decoder for decoy-font images, show the revealed output image, and state both the hidden and the decoy text in chat.",
+  "author": {
+    "name": "Haroon K M",
+    "email": "haroonint144@gmail.com",
+    "url": "https://github.com/haroontrailblazer"
+  },
+  "homepage": "https://github.com/haroontrailblazer/decoy-font-decoder",
+  "repository": "https://github.com/haroontrailblazer/decoy-font-decoder",
+  "license": "MIT",
+  "keywords": [
+    "decoy-font",
+    "hidden-text",
+    "hybrid-image",
+    "spatial-frequency",
+    "ocr",
+    "steganography",
+    "anti-ocr"
+  ],
+  "skills": "./codex-skills/",
+  "interface": {
+    "displayName": "Decoy Font Decoder",
+    "shortDescription": "Reveal the hidden text behind a decoy-font image",
+    "longDescription": "Run the Python decoder on decoy-font images — glyphs that show one sharp outline letter to machines while a blurred second letter hides behind it for humans. The plugin separates the two spatial-frequency layers with a low-pass filter, renders the revealed hidden message and the decoy layer, and states both texts in chat.",
+    "developerName": "Haroon K M",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/haroontrailblazer/decoy-font-decoder",
+    "defaultPrompt": [
+      "Run the decoder, show the revealed image, and state the real hidden text in this image.",
+      "This image reads as gibberish — decode the decoy font and show both the hidden and fake text."
+    ],
+    "brandColor": "#171717",
+    "screenshots": []
+  }
+}

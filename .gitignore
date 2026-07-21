@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+/revealed.png
+/decoy.png
+decoded/
+
+# Built skill archive — never commit. A zip inside the repo is a nested zip
+# inside the plugin package (source "./"), which claude.ai rejects on install.
+claude-ai-skill/*.zip
+
+# Transient runtime/build dirs
+.tmp/
+.codex-runtime-deps/

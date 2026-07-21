@@ -1,0 +1,22 @@
+{
+  "name": "decoy-font-tools",
+  "description": "Tools for decoding two-layer decoy-font images",
+  "owner": {
+    "name": "Haroon K M",
+    "email": "haroonint144@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "decoy-font-decoder",
+      "source": "./",
+      "skills": "./claude-skills/",
+      "description": "Reveal the real text hidden behind decoy-font images (two messages at different spatial frequencies) using low-pass filtering and OCR",
+      "version": "1.0.0",
+      "license": "MIT",
+      "author": {
+        "name": "Haroon K M",
+        "email": "haroonint144@gmail.com"
+      }
+    }
+  ]
+}

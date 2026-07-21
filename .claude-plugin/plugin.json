@@ -1,0 +1,16 @@
+{
+  "name": "decoy-font-decoder",
+  "displayName": "Decoy Font Decoder",
+  "version": "1.0.0",
+  "skills": "./claude-skills/",
+  "commands": "./commands/",
+  "description": "Reveal the real text hidden behind decoy-font images (two messages at different spatial frequencies) using low-pass filtering and OCR",
+  "author": {
+    "name": "Haroon K M",
+    "email": "haroonint144@gmail.com"
+  },
+  "homepage": "https://github.com/haroontrailblazer/decoy-font-decoder",
+  "repository": "https://github.com/haroontrailblazer/decoy-font-decoder",
+  "license": "MIT",
+  "keywords": ["decoy-font", "hidden-text", "hybrid-image", "spatial-frequency", "ocr", "steganography", "anti-ocr"]
+}

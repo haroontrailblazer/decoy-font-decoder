@@ -1,0 +1,4 @@
+interface:
+  display_name: "Decoy Font Decoder"
+  short_description: "Reveal the hidden text behind a decoy-font image"
+  default_prompt: "Use $decoy-decode to run the decoder, show the revealed image, and state both the real hidden text and the decoy text in this image."
