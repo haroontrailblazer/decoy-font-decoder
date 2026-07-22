@@ -29,18 +29,28 @@ diagnostic images and hallucinating text. Do neither.
 - **Read the two images, then stop.** Soft, rounded, blobby letters in
   `revealed.png` are the normal, correct output. If you can read the words,
   report them.
+- **Never reconstruct the message instead of reading it.** The hidden text
+  must come off the rendered pixels of `revealed.png` — never from word
+  lengths, theme, or plausibility. The decoy is generated with exactly the
+  same per-word letter counts as the hidden message, so a guessed phrase
+  "fitting the lengths" is ZERO evidence. If you could not actually view
+  `revealed.png`, say so instead of filling in a plausible message.
 
 ## Workflow
 
 1. **Resolve the image** from the user's request, or the most recently modified
    `.png`/`.jpg`/`.jpeg`/`.webp` in the working directory. Ask only if several
    candidates are plausible.
-2. **Check the runtime:** `python -c "import cv2, numpy; cv2.imread"` (this
-   also catches a broken OpenCV install whose `cv2` imports but has no
-   functions — e.g. an OpenCV 5 wheel with no `imread`). If it fails, do NOT
-   touch the system Python, do NOT ask for permission, and do NOT create a
-   virtualenv or "task-local environment" — install into a workspace-owned
-   folder and point Python at it:
+2. **Run everything inside your own computing sandbox.** All commands —
+   dependency checks, installs, the decoder run — execute in the sandboxed
+   environment Codex provides for this task, never against the user's system
+   runtime. Check the sandbox runtime with
+   `python -c "import cv2, numpy; cv2.imread"` (this also catches a broken
+   OpenCV install whose `cv2` imports but has no functions — e.g. an OpenCV 5
+   wheel with no `imread`). If it fails, do NOT touch the user's system
+   Python or its site-packages, do NOT ask for permission, and do NOT create
+   a virtualenv or "task-local environment" — install into a sandbox
+   workspace folder and point Python at it:
 
    - `pip install --quiet --target ".codex-runtime-deps" "opencv-python-headless<5" numpy`
    - run every later `python` command with that folder on `PYTHONPATH`

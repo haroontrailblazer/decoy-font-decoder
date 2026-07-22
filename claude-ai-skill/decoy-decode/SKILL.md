@@ -9,21 +9,20 @@ A decoy-font image packs two messages into the same glyphs: a sharp thin-outline
 
 ## The whole job — do exactly this
 
-1. Write the program in **Decoder** (below) to `decode.py`, then run it once on the attached image:
+1. Write the program in **Decoder** (below) to `decode.py`, then run it once on the attached image, writing the outputs to the user-visible outputs directory:
 
    ```bash
    pip install --quiet "opencv-python-headless<5" numpy
-   python decode.py "<image-path>" out
+   python decode.py "<image-path>" /mnt/user-data/outputs
    ```
 
-2. View **both** `out/revealed.png` (the real hidden message — soft dark letters on white) and `out/decoy.png` (the fake sharp-outline message). Read the word(s) directly from these images.
+2. **Actually view both output images.** Open `/mnt/user-data/outputs/revealed.png` (the real hidden message — soft dark letters on white) and `/mnt/user-data/outputs/decoy.png` (the fake sharp-outline message) with the file viewer so their rendered pixels are genuinely in your context. You have read an image only if you saw it rendered; a tool call that returned no visual content does not count — view it again, and if it still won't render, stop and say you could not view the output.
 
-3. Reply with **only** this — show both images, then the two texts:
+3. Reply with **only** this — link both output files, then the two texts:
 
    ```
-   ![revealed.png](out/revealed.png)
-
-   ![decoy.png](out/decoy.png)
+   [revealed.png](computer:///mnt/user-data/outputs/revealed.png)
+   [decoy.png](computer:///mnt/user-data/outputs/decoy.png)
 
    Hidden text in the image: **<REAL TEXT>**
    Decoy text (the fake layer AI reads): **<FAKE TEXT>**
@@ -37,6 +36,7 @@ The hidden letters are soft, rounded blobs. **That is the correct, finished outp
 - **Run the decoder once.** Do not build a second decoder, try another method (edge detection, adaptive thresholding, frequency-domain analysis), or "improve" the approach. One run, then read.
 - **Produce exactly two images** — `revealed.png` and `decoy.png`. Do not create any other images: no crops, no diagnostic maps, no re-thresholded variants.
 - **Never conclude "it's just a smudge" or "the decode failed"** because the letters look soft and blobby. Soft blobby letters = success. Look for the words.
+- **Never reconstruct the message instead of reading it.** The hidden text must come off the rendered pixels of `revealed.png` — never from word lengths, theme, "what a demo would say", or any other reasoning. The decoy text is generated with exactly the same per-word letter counts as the hidden message, so a guessed phrase "fitting the lengths" is ZERO evidence — many phrases fit, and picking one is the precise hallucination this skill exists to prevent. If you could not actually view `revealed.png`, report that; do not fill in a plausible message.
 - If one character is genuinely ambiguous, read the rest and mark just that one `(unclear: X)`. Keep the reply to the two images plus the two text lines.
 
 ## Decoder (write to `decode.py`, run once)

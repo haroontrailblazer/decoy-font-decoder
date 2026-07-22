@@ -30,6 +30,12 @@ over-processing — spawning diagnostic images and hallucinating text. Do neithe
 - **Read the two images, then stop.** Soft, rounded, blobby letters in
   `revealed.png` are the normal, correct output — not a reason to re-process.
   If you can read the words, report them.
+- **Never reconstruct the message instead of reading it.** The hidden text
+  must come off the rendered pixels of `revealed.png` — never from word
+  lengths, theme, or plausibility. The decoy is generated with exactly the
+  same per-word letter counts as the hidden message, so a guessed phrase
+  "fitting the lengths" is ZERO evidence. If you could not actually view
+  `revealed.png`, say so instead of filling in a plausible message.
 
 ## Steps
 

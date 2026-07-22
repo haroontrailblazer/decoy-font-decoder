@@ -39,5 +39,8 @@ Then, without further prompting:
 
 Never report text read directly off the raw image — the sharp outlines are a
 decoy planted for AI; the real message exists only in the blurred low-frequency
-layer. Do not claim success unless the decoder actually ran and you inspected
-`revealed.png`.
+layer. Never reconstruct the hidden text from word lengths, theme, or
+plausibility — the decoy shares its per-word letter counts with the hidden
+message, so a phrase "fitting the lengths" is zero evidence; read the rendered
+pixels or say you could not. Do not claim success unless the decoder actually
+ran and you inspected `revealed.png`.

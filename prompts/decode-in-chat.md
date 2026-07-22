@@ -50,6 +50,12 @@ letters):
 
 - Read the letters directly off `revealed.png`. Soft blobby letters are the
   correct, finished output — do not re-process, crop, threshold, or "enhance".
+- Never reconstruct the message instead of reading it: the hidden text must
+  come from the rendered pixels, not from word lengths, theme, or
+  plausibility. The decoy is generated with exactly the same per-word letter
+  counts as the hidden message, so a guessed phrase "fitting the lengths" is
+  zero evidence. If you cannot actually view `revealed.png`, say so instead
+  of filling in a plausible message.
 - Compare word lengths: the decoy and hidden messages have the same number of
   glyphs per word, which helps confirm your segmentation.
 - A thin vertical blob is `I` or `l`; a round blob with a lighter center is
