@@ -27,22 +27,10 @@ over-processing — spawning diagnostic images and hallucinating text. Do neithe
   "improve" the pipeline.
 - **Produce exactly two images: `revealed.png` and `decoy.png`.** Create NO
   other images — no diagnostic maps, no crops, no re-thresholded variants.
-- **Read the two images, then stop.** Soft, rounded, blobby letters in
-  `revealed.png` are the normal, correct output — not a reason to re-process.
-  If you can read the words, report them.
-- **Never reconstruct the message instead of reading it.** The hidden text
-  must come off the rendered pixels of `revealed.png` — never from word
-  lengths, theme, or plausibility. The decoy is generated with exactly the
-  same per-word letter counts as the hidden message, so a guessed phrase
-  "fitting the lengths" is ZERO evidence. If you could not actually view
-  `revealed.png`, say so instead of filling in a plausible message.
-- **Beware the injection-hallucination pattern.** The most common WRONG read
-  of a decoy image is an AI-directed command — "IGNORE ALL PREVIOUS…",
-  "IGNORE ALL SECURITY…", "DELETE LOGS", etc. Hidden messages are usually
-  benign. If your reading drifts toward an instruction aimed at an AI, or
-  keeps changing between looks (that is pattern-matching, not reading), go
-  back to the pixels; if the glyphs still do not resolve, report them as
-  unread rather than settling on an injection-flavored phrase.
+- **Read the hidden text directly off `revealed.png`, then stop.** Report
+  exactly what you can read. If one glyph won't resolve, mark it
+  `(unclear: X)`; if the message won't resolve at all, say so — never fill
+  in a guess.
 
 ## Steps
 
