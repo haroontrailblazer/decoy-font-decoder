@@ -50,9 +50,13 @@ def split_layers(img, sigma_frac=0.005, gamma=0.6):
     inv = 255 - img.astype(np.float32)  # text mass -> bright
     sigma = max(img.shape) * sigma_frac
     low = cv2.GaussianBlur(inv, (0, 0), sigmaX=sigma)
-    norm = cv2.normalize(low, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    norm = cv2.normalize(low, None, 0, 255, cv2.NORM_MINMAX)
 
-    # hidden message: gamma-boost the surviving low-frequency mass
+    # high-boost sharpening: steepen the blur gradients into near-crisp
+    # strokes, then gamma-boost
+    soft = cv2.GaussianBlur(norm, (0, 0), sigmaX=sigma)
+    norm = cv2.normalize(np.clip(norm + 2.0 * (norm - soft), 0, 255),
+                         None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
     revealed_gray = (np.power(norm / 255.0, gamma) * 255).astype(np.uint8)
 
     # decoy message: what remains after removing the low-frequency mass
