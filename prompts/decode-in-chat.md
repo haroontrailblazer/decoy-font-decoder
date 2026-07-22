@@ -112,13 +112,15 @@ inv = 255 - img.astype(np.float32)          # text mass -> bright
 sigma = max(img.shape) * 0.005              # ~0.5% of the long edge kills thin outlines
 low = cv2.GaussianBlur(inv, (0, 0), sigmaX=sigma)
 
-# hidden message: high-boost sharpen the blur gradients into near-crisp
-# strokes, then gamma-boost — keep it grayscale; hard thresholds destroy
-# the letterforms
-norm = cv2.normalize(low, None, 0, 255, cv2.NORM_MINMAX)
-soft = cv2.GaussianBlur(norm, (0, 0), sigmaX=sigma)
-norm = cv2.normalize(np.clip(norm + 2.0 * (norm - soft), 0, 255),
-                     None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+# hidden message: Wiener-deconvolve the surviving low-frequency mass —
+# mathematically reversing the blur recovers real letterforms (crossbars,
+# counters, stroke terminals); keep it grayscale
+fy = np.fft.fftfreq(low.shape[0])[:, None]
+fx = np.fft.fftfreq(low.shape[1])[None, :]
+G = np.exp(-2.0 * (np.pi ** 2) * ((2.0 * sigma) ** 2) * (fx ** 2 + fy ** 2))
+dec = np.real(np.fft.ifft2(np.fft.fft2(low) * G / (G ** 2 + 0.02)))
+norm = cv2.normalize(np.clip(dec, 0, None), None, 0, 255,
+                     cv2.NORM_MINMAX).astype(np.uint8)
 revealed = (np.power(norm / 255.0, 0.6) * 255).astype(np.uint8)
 
 # decoy message: what remains after removing the low-frequency mass

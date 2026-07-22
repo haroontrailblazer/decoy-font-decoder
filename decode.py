@@ -10,10 +10,10 @@ This decoder recovers both layers:
      leaving only the blurred mass — the hidden message,
   2. subtracting that low-pass layer leaves only the sharp outlines —
      the decoy message,
-  3. gamma-boost the hidden layer (kept grayscale — the letter identity
-     lives in the blur gradients), crop both layers to the text and enlarge
-     — so the letters stay big and readable even when a chat UI downscales
-     the image — then OCR the revealed layer (optional).
+  3. Wiener-deconvolve the hidden layer to reverse the blur and recover
+     real letterforms, gamma-boost, crop both layers to the text and
+     enlarge — so the letters stay big and readable even when a chat UI
+     downscales the image — then OCR the revealed layer (optional).
 
 Usage:
   python decode.py decoy-message.png
@@ -50,13 +50,13 @@ def split_layers(img, sigma_frac=0.005, gamma=0.6):
     inv = 255 - img.astype(np.float32)  # text mass -> bright
     sigma = max(img.shape) * sigma_frac
     low = cv2.GaussianBlur(inv, (0, 0), sigmaX=sigma)
-    norm = cv2.normalize(low, None, 0, 255, cv2.NORM_MINMAX)
 
-    # high-boost sharpening: steepen the blur gradients into near-crisp
-    # strokes, then gamma-boost
-    soft = cv2.GaussianBlur(norm, (0, 0), sigmaX=sigma)
-    norm = cv2.normalize(np.clip(norm + 2.0 * (norm - soft), 0, 255),
-                         None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    # Wiener deconvolution: mathematically reverse the (Gaussian) blur to
+    # recover real letterforms — crossbars, counters, stroke terminals —
+    # instead of merely boosting contrast on soft blobs
+    dec = wiener_deconv(low, 2.0 * sigma, K=0.02)
+    norm = cv2.normalize(np.clip(dec, 0, None), None, 0, 255,
+                         cv2.NORM_MINMAX).astype(np.uint8)
     revealed_gray = (np.power(norm / 255.0, gamma) * 255).astype(np.uint8)
 
     # decoy message: what remains after removing the low-frequency mass
@@ -66,6 +66,14 @@ def split_layers(img, sigma_frac=0.005, gamma=0.6):
     revealed = 255 - crop_to_text(revealed_gray, norm)
     decoy = 255 - crop_to_text(high, norm)
     return revealed, decoy
+
+
+def wiener_deconv(img_f, sigma, K=0.02):
+    """Frequency-domain Wiener deconvolution of a Gaussian blur."""
+    fy = np.fft.fftfreq(img_f.shape[0])[:, None]
+    fx = np.fft.fftfreq(img_f.shape[1])[None, :]
+    G = np.exp(-2.0 * (np.pi ** 2) * (sigma ** 2) * (fx ** 2 + fy ** 2))
+    return np.real(np.fft.ifft2(np.fft.fft2(img_f) * G / (G ** 2 + K)))
 
 
 def crop_to_text(layer, mask, pad_frac=0.06, min_side=1600):
