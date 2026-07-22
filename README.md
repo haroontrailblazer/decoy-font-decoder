@@ -78,8 +78,8 @@ Build the uploadable skill package:
 python claude-ai-skill/build-zip.py
 ```
 
-Upload `decoy-decode.zip` under **Settings → Capabilities → Skills**, attach an
-image, and ask what it really says. See the
+Upload `decoy-decode.zip` under **Customize → Skills**, start a new chat,
+attach an image, and ask what it really says. See the
 [Claude.ai installation guide](claude-ai-skill/README.md) for the complete
 setup.
 

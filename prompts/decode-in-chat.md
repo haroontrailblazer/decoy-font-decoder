@@ -18,11 +18,22 @@ It writes two images:
 - `revealed.png` — the real hidden message
 - `decoy.png` — the fake sharp-outline message
 
-Then simply look at each output image once and read its text:
+Then hand each generated file back to the assistant's vision system and read
+its text:
 
-1. Open `revealed.png` — what's the text in the image? That is the hidden
-   message.
-2. Open `decoy.png` — what's the text in the image? That is the fake message.
+1. In a **new tool call after Python finishes**, open `revealed.png` with the
+   platform's file/image-view tool. In claude.ai, use the computer `view` tool
+   on the generated PNG. Wait until the tool result contains the actual pixels;
+   then read the hidden message from that result.
+2. Make a second image-view tool call for `decoy.png`, wait for its actual
+   pixels, and read the fake message from that result.
+
+A successful file write, terminal output, a download link, a filename, or an
+`IPython.display()` call inside a shell-run script does **not** place the image
+back into vision and does not count as inspecting it. Do not compose the answer
+until both generated images have appeared in image-view tool results. If the
+platform cannot view generated files, return both files and ask the user to
+attach `revealed.png`; do not guess the hidden text.
 
 That's the whole job. The decoder output is final — do not verify,
 cross-check, correlate, re-blur, crop, downscale, or re-process anything, and
@@ -125,12 +136,5 @@ if f > 1:
 cv2.imwrite(os.path.join(OUT, "revealed.png"), 255 - stacked)
 cv2.imwrite(os.path.join(OUT, "decoy.png"), 255 - crop_to_text(high, norm))
 print("Wrote revealed.png (REAL hidden message) and decoy.png (fake sharp layer).")
-
-# Render both images inline where the runtime supports it (harmless if it doesn't).
-try:
-    from IPython.display import Image, display
-    display(Image(filename=os.path.join(OUT, "revealed.png")))
-    display(Image(filename=os.path.join(OUT, "decoy.png")))
-except Exception:
-    pass
+print("NEXT REQUIRED ACTION: open revealed.png and decoy.png with the platform image-view tool.")
 ```

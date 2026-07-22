@@ -31,5 +31,5 @@ print(f"Wrote {out}")
 with zipfile.ZipFile(out) as z:
     for name in z.namelist():
         print("  " + name)
-print("\nUpload this single file in claude.ai -> Settings -> Capabilities -> "
-      "Skills -> Upload skill. Do NOT upload a zip of the whole repo/folder.")
+print("\nUpload this single file in claude.ai -> Customize -> Skills -> "
+      "Upload skill. Do NOT upload a zip of the whole repo/folder.")

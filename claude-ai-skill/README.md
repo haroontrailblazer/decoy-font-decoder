@@ -21,8 +21,8 @@ This writes `claude-ai-skill/decoy-decode.zip` containing only
 
 ## Install in claude.ai (2 minutes)
 
-1. In claude.ai, open **Settings → Capabilities → Skills** (Pro/Team/Enterprise;
-   code execution must be enabled).
+1. In claude.ai, make sure **Code execution and file creation** is enabled,
+   then open **Customize → Skills**.
 2. Click **Upload skill** and choose the single **`decoy-decode.zip`** you built.
    Upload only that file — do **not** upload a zip of the whole repo or of the
    `claude-ai-skill/` folder, or you'll hit the nested-zip error.
@@ -32,6 +32,12 @@ This writes `claude-ai-skill/decoy-decode.zip` containing only
 
 Claude loads the `decoy-decode` skill, runs the bundled decoder, views the two
 output images, and replies with both the hidden text and the decoy text.
+
+After replacing an older copy of this skill, start a **new chat** so the old
+instructions are not retained in the conversation. During a successful run,
+Claude's activity should show separate `view` operations for `revealed.png`
+and `decoy.png` after the decoder finishes. Merely creating or linking the
+files is not enough for Claude to read their pixels.
 
 ## What's inside
 
@@ -49,6 +55,10 @@ output images, and replies with both the hidden text and the decoy text.
   `Hidden text in the image: <text>`. It explicitly tells Claude **not** to
   report the sharp text off the raw image (that's the planted fake message),
   re-decode, or try other methods.
+- The claude.ai workflow explicitly re-opens both generated PNGs with the
+  computer `view` tool. This is required because displaying an image from a
+  normal shell-run Python process does not reliably make that image available
+  to Claude's vision model.
 - Same decoder ships as a `/decoy-decode` command + skill for **Claude Code**
   and a `$decoy-decode` skill for **Codex**. See the repository root README.
 
