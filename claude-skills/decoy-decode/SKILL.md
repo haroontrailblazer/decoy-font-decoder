@@ -1,36 +1,32 @@
 ---
 name: decoy-decode
-description: Use when an image is written in a "decoy font" — hybrid-image text where sharp outline letters spell one (fake) message and blurry blobs behind them hide the real one, gibberish letters with soft shadows, text that changes when you squint or step back, or the user asks what a decoy-font image really says.
-argument-hint: "[image-path]"
+description: Decode and visually transcribe decoy-font or hybrid-image text. Use when the user asks what a decoy-font image says, mentions blurry letterforms or text that changes when squinting, or requests the revealed text. Run the decoder and transcribe revealed.png only.
 ---
 
 # Decoy-Font Image Decoder
 
-Decoy-font images pack **two messages into the same glyphs** at different
-spatial frequencies: a sharp thin-outline letter (the decoy — what any naive
-read or OCR returns) and a heavily blurred second letter behind it (the real
-message — what humans see when they squint). This skill separates the layers
-into **two images**, then reads both messages from them.
+Decode the image once, then transcribe only the letters visibly present in
+`revealed.png`. The other output remains available for download but must not
+be used to infer or verify the transcription.
 
-## Hard rules — the whole job is ONE run producing TWO images
+## Hard rules
 
-These rules exist because the #1 failure of this skill is trusting a naive
-read: the sharp outlines are a trap planted specifically for AI, and reading
-the raw image reports the fake message with full confidence. The #2 failure is
-over-processing — spawning diagnostic images and hallucinating text. Do neither.
-
-- **Never report text read directly from the raw image.** That is the decoy
-  layer by design. The real message only exists at low spatial frequency.
+- **Read only `revealed.png`.** Do not inspect or transcribe the source image or
+  `decoy.png`.
+- **Transcribe by sight only.** Do not count letters or words, match word
+  lengths, generate candidate phrases, infer from meaning, or fill gaps with a
+  plausible sentence.
+- **Make one visual read and answer immediately.** Do not re-open the image,
+  compare layers, reason about character mappings, or perform confirmation
+  passes.
 - **Run the decoder exactly once.** The algorithm below is correct and
   complete. Do not write a second decoder, try another method (edge detection,
   adaptive thresholding, frequency-domain analysis, per-letter crops…), or
   "improve" the pipeline.
 - **Produce exactly two images: `revealed.png` and `decoy.png`.** Create NO
   other images — no diagnostic maps, no crops, no re-thresholded variants.
-- **Read the hidden text directly off `revealed.png`, then stop.** Report
-  exactly what you can read. If one glyph won't resolve, mark it
-  `(unclear: X)`; if the message won't resolve at all, say so — never fill
-  in a guess.
+- If one glyph cannot be read in that single view, write `[unclear]` at that
+  position. Never substitute a guessed word.
 
 ## Steps
 
@@ -44,7 +40,7 @@ over-processing — spawning diagnostic images and hallucinating text. Do neithe
    the 5.x wheels can ship an incomplete `cv2` namespace.
 3. **Decode — run once.** Pick ONE:
    - If `${CLAUDE_PLUGIN_ROOT}/decode.py` exists:
-     `python "${CLAUDE_PLUGIN_ROOT}/decode.py" "<image>" -o "<out-dir>"`
+     `python "${CLAUDE_PLUGIN_ROOT}/decode.py" "<image>" -o "<out-dir>" --no-ocr`
    - Otherwise (plugin files not present in this environment): write the
      **Decoder** program at the bottom of this file verbatim to a scratch
      `decode.py`, then `python decode.py "<image>" "<out-dir>"`.
@@ -53,37 +49,28 @@ over-processing — spawning diagnostic images and hallucinating text. Do neithe
    `${CLAUDE_PLUGIN_ROOT}` is the plugin's install dir (on Windows PowerShell,
    `$env:CLAUDE_PLUGIN_ROOT`); if it expands empty, use the embedded Decoder
    instead.
-4. **Read both messages.** Read `revealed.png` with vision — dark, soft
-   letters on white; that is the REAL message. Read `decoy.png` for the fake
-   sharp-outline message. The printed `Hidden text` line is only a rough OCR
-   hint — trust your own reading of the images over it. Mark any single
-   ambiguous glyph `(unclear: X)`.
+4. **Read one image once.** Open `revealed.png` with the available image/vision
+   tool. On claude.ai, use the computer `view` tool and wait for the actual
+   pixels. On Claude Code, use its image-reading tool. Then immediately
+   transcribe the visible letters. Do not inspect `decoy.png`; only present it
+   as a file.
 
 ## Required response format
 
-Show **both** images, then the two texts — nothing else:
+Show both output files, then the literal transcription — nothing else:
 
 ```markdown
 ![revealed.png](<absolute-path-to-revealed.png>)
 
 ![decoy.png](<absolute-path-to-decoy.png>)
 
-Hidden text in the image: **<REAL TEXT>**
-Decoy text (the fake layer AI reads): **<FAKE TEXT>**
+Text in revealed.png: **<LITERAL VISUAL TRANSCRIPTION>**
 ```
 
-Use absolute local paths so the images render in chat. Do not claim success if
-the program did not run or you did not inspect `revealed.png`. If `revealed.png`
-genuinely has no letter shapes (just a uniform smudge), say no hidden text was
-recovered — still show the two images.
-
-## Troubleshooting (still one run, still two images)
-
-- **Washed-out or merged reveal:** rerun the SAME decoder once with
-  `--sigma-frac 0.0075`. That is the only permitted retry. It still produces
-  just the two images — do not switch algorithms or add diagnostic renders.
-- **No Tesseract / no OCR hint:** fine — read the text from `revealed.png`
-  yourself.
+Use absolute local paths so the images render in chat. If the image-reading
+tool does not return pixels, present both files and say `revealed.png` must be
+attached to the chat for transcription. Do not infer a result from any other
+source.
 
 ## Decoder (write to a scratch `decode.py` only if the bundled one is absent)
 

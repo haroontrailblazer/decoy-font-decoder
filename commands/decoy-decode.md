@@ -22,23 +22,22 @@ Then, without further prompting:
 2. Run the decoder (it writes `revealed.png` and `decoy.png`):
 
    ```
-   python "${CLAUDE_PLUGIN_ROOT}/decode.py" "<image-path>" -o "<scratch-out-dir>"
+   python "${CLAUDE_PLUGIN_ROOT}/decode.py" "<image-path>" -o "<scratch-out-dir>" --no-ocr
    ```
 
    `${CLAUDE_PLUGIN_ROOT}` is the plugin's install directory. On Windows
    PowerShell it is `$env:CLAUDE_PLUGIN_ROOT`; if it expands empty, substitute
    the install path literally.
-3. Read `revealed.png` with vision to get the REAL message (soft dark letters
-   on white). Read `decoy.png` to get the fake sharp-outline message.
-4. Reply with both texts, plus the output image paths:
+3. Open `revealed.png` exactly once with the image/vision tool. On claude.ai,
+   use the computer `view` tool and wait until it returns the actual pixels.
+   Do not open or read `decoy.png`; it is only an output file to present.
+4. Immediately copy only the letters visibly present in `revealed.png`:
 
    ```
-   Hidden text in the image: **<REAL TEXT>**
-   Decoy text (the fake layer AI reads): **<FAKE TEXT>**
+   Text in revealed.png: **<LITERAL VISUAL TRANSCRIPTION>**
    ```
 
-Never report text read directly off the raw image — the sharp outlines are the
-fake message; the real one only appears in `revealed.png`. Read the hidden
-text directly off `revealed.png`; if it won't resolve, say so instead of
-guessing. Do not claim success unless the decoder actually ran and you
-inspected `revealed.png`.
+Do not count letters or words, match word lengths, generate candidate phrases,
+compare image layers, infer from meaning, or perform a confirmation pass. If a
+glyph cannot be read in the single view, write `[unclear]` in that position.
+Never fill a gap with a plausible word.

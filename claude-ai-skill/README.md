@@ -30,14 +30,15 @@ This writes `claude-ai-skill/decoy-decode.zip` containing only
 
    > What does this image really say?
 
-Claude loads the `decoy-decode` skill, runs the bundled decoder, views the two
-output images, and replies with both the hidden text and the decoy text.
+Claude loads the `decoy-decode` skill, runs the bundled decoder, views
+`revealed.png` once, and literally transcribes only the letters visible there.
 
 After replacing an older copy of this skill, start a **new chat** so the old
 instructions are not retained in the conversation. During a successful run,
-Claude's activity should show separate `view` operations for `revealed.png`
-and `decoy.png` after the decoder finishes. Merely creating or linking the
-files is not enough for Claude to read their pixels.
+Claude's activity should show one `view` operation for `revealed.png` after
+the decoder finishes, followed immediately by the transcription. It should
+not inspect `decoy.png`, count word lengths, construct candidate sentences,
+or run a confirmation pass.
 
 ## What's inside
 
@@ -50,15 +51,11 @@ files is not enough for Claude to read their pixels.
 ## Notes
 
 - The sandbox installs `opencv-python-headless` and `numpy` automatically.
-- The skill is deliberately minimal: run once, produce exactly two images
-  (`revealed.png` + `decoy.png`), read the words, report
-  `Hidden text in the image: <text>`. It explicitly tells Claude **not** to
-  report the sharp text off the raw image (that's the planted fake message),
-  re-decode, or try other methods.
-- The claude.ai workflow explicitly re-opens both generated PNGs with the
-  computer `view` tool. This is required because displaying an image from a
-  normal shell-run Python process does not reliably make that image available
-  to Claude's vision model.
+- The skill runs once and produces exactly two files (`revealed.png` and
+  `decoy.png`), but uses only `revealed.png` for transcription.
+- The claude.ai workflow explicitly opens `revealed.png` once with the
+  computer `view` tool. It forbids decoy comparison, word/letter counting,
+  candidate-phrase generation, and repeated confirmation reads.
 - Same decoder ships as a `/decoy-decode` command + skill for **Claude Code**
   and a `$decoy-decode` skill for **Codex**. See the repository root README.
 
