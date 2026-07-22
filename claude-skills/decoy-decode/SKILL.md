@@ -85,7 +85,7 @@ recovered — still show the two images.
 ## Troubleshooting (still one run, still two images)
 
 - **Washed-out or merged reveal:** rerun the SAME decoder once with
-  `--sigma-frac 0.015`. That is the only permitted retry. It still produces
+  `--sigma-frac 0.0075`. That is the only permitted retry. It still produces
   just the two images — do not switch algorithms or add diagnostic renders.
 - **No Tesseract / no OCR hint:** fine — read the text from `revealed.png`
   yourself.
@@ -106,7 +106,7 @@ if img is None:
 
 # --- split the two spatial-frequency layers ---
 inv = 255 - img.astype(np.float32)          # text mass -> bright
-sigma = max(img.shape) * 0.01               # ~1% of the long edge kills thin outlines
+sigma = max(img.shape) * 0.005              # ~0.5% of the long edge kills thin outlines
 low = cv2.GaussianBlur(inv, (0, 0), sigmaX=sigma)
 
 # hidden message: gamma-boost the surviving low-frequency mass — keep it
@@ -120,7 +120,7 @@ high = cv2.normalize(high, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
 # crop both layers to the text and enlarge, so the letters stay big and
 # readable even after chat-UI downscaling
-def crop_to_text(layer, ref, pad_frac=0.06, min_side=1200):
+def crop_to_text(layer, ref, pad_frac=0.06, min_side=1600):
     ys, xs = np.where(ref > 127)
     if ys.size:
         span = max(int(ys.max()) - int(ys.min()), int(xs.max()) - int(xs.min()))

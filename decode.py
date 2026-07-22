@@ -17,7 +17,7 @@ This decoder recovers both layers:
 
 Usage:
   python decode.py decoy-message.png
-  python decode.py image.png -o out_dir --sigma-frac 0.015 --no-ocr
+  python decode.py image.png -o out_dir --sigma-frac 0.0075 --no-ocr
 """
 
 import argparse
@@ -36,7 +36,7 @@ def load_gray(path):
     return img
 
 
-def split_layers(img, sigma_frac=0.01, gamma=0.6):
+def split_layers(img, sigma_frac=0.005, gamma=0.6):
     """Separate the hidden (low-frequency) and decoy (high-frequency) layers.
 
     The hidden letters are pure blur — they survive a heavy low-pass filter.
@@ -64,7 +64,7 @@ def split_layers(img, sigma_frac=0.01, gamma=0.6):
     return revealed, decoy
 
 
-def crop_to_text(layer, mask, pad_frac=0.06, min_side=1200):
+def crop_to_text(layer, mask, pad_frac=0.06, min_side=1600):
     """Crop to the text bounding box and enlarge, so letters are big and
     obvious instead of small shapes lost in a mostly-empty frame."""
     ys, xs = np.where(mask > 127)
@@ -113,8 +113,8 @@ def main():
     ap = argparse.ArgumentParser(description="Decode decoy-font images (two texts hidden at different spatial frequencies)")
     ap.add_argument("image", help="path to the decoy-font image")
     ap.add_argument("-o", "--out-dir", default=".", help="directory for output images (default: current dir)")
-    ap.add_argument("--sigma-frac", type=float, default=0.01,
-                    help="low-pass sigma as a fraction of the long edge (default 0.01)")
+    ap.add_argument("--sigma-frac", type=float, default=0.005,
+                    help="low-pass sigma as a fraction of the long edge (default 0.005)")
     ap.add_argument("--no-ocr", action="store_true", help="skip the OCR step")
     args = ap.parse_args()
 

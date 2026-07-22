@@ -147,7 +147,7 @@ Useful command-line options:
 ```bash
 python decode.py IMAGE \
   -o OUT_DIR \
-  --sigma-frac 0.015 \
+  --sigma-frac 0.0075 \
   --gamma 0.6 \
   --no-ocr
 ```
