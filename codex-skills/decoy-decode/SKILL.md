@@ -37,19 +37,25 @@ diagnostic images and hallucinating text. Do neither.
    candidates are plausible.
 2. **Check the runtime:** `python -c "import cv2, numpy; cv2.imread"` (this
    also catches a broken OpenCV install whose `cv2` imports but has no
-   functions). If it fails, run
-   `pip install --quiet "opencv-python-headless<5" numpy` directly in the
-   task sandbox — OpenCV must stay on 4.x; the 5.x wheels can import an
-   incomplete `cv2` namespace. If the check still fails after installing (a
-   pre-existing broken OpenCV), run
-   `pip install --quiet --force-reinstall "opencv-python-headless<5"` once,
-   re-check, and move on. The Codex task environment is an isolated,
-   disposable VM — installing into it modifies nothing on the user's system,
-   so do NOT ask for permission, do NOT create a task-local virtualenv or any
-   other environment, and do NOT install from `requirements.txt` (it lists
+   functions — e.g. an OpenCV 5 wheel with no `imread`). If it fails, do NOT
+   touch the system Python, do NOT ask for permission, and do NOT create a
+   virtualenv or "task-local environment" — install into a workspace-owned
+   folder and point Python at it:
+
+   - `pip install --quiet --target ".codex-runtime-deps" "opencv-python-headless<5" numpy`
+   - run every later `python` command with that folder on `PYTHONPATH`
+     (POSIX: `PYTHONPATH=".codex-runtime-deps" python …`; Windows PowerShell:
+     `$env:PYTHONPATH=".codex-runtime-deps"; python …`).
+
+   OpenCV must stay on 4.x — the 5.x wheels can expose an incomplete `cv2`.
+   This one method covers every environment: it needs no elevated rights, it
+   works when the system site-packages directory is owned by an elevated
+   installer and unreadable to the task (a real failure mode on Windows), and
+   because `PYTHONPATH` precedes site-packages, the pinned 4.x copy shadows
+   any broken system OpenCV. Do NOT install from `requirements.txt` (it lists
    `pytesseract`, which this skill never needs — you read the output images
-   with vision, not OCR). If the sandbox blocks package installs entirely,
-   state that one-line limitation and stop.
+   with vision, not OCR). If installs are blocked entirely, state that
+   one-line limitation and stop.
 3. **Decode — run once.** Pick ONE:
    - If `<plugin-root>/decode.py` exists:
      `python "<plugin-root>/decode.py" "<image>" -o "<out-dir>" --no-ocr`

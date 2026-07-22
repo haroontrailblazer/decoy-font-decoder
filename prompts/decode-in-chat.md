@@ -29,6 +29,11 @@ directly in your Python sandbox. If `cv2` or `numpy` is missing — or `cv2`
 imports but has no `imread` (a broken OpenCV 5 install) — run
 `pip install --quiet "opencv-python-headless<5" numpy` right there (add
 `--force-reinstall` for the broken-install case). OpenCV must stay on 4.x.
+If that install hits a permission error (e.g. a system Python whose
+site-packages is owned by an elevated installer), instead run
+`pip install --quiet --target ".deps" "opencv-python-headless<5" numpy` and
+execute the program with that folder on `PYTHONPATH` — it needs no elevated
+rights and shadows any broken system OpenCV.
 Your execution sandbox is isolated and disposable, so this needs no permission
 and must NOT involve creating a virtualenv or a "task-local environment".
 Never install `pytesseract` or any OCR package; you read the output images

@@ -11,7 +11,7 @@
       "source": "./",
       "skills": "./claude-skills/",
       "description": "Reveal the real text hidden behind decoy-font images (two messages at different spatial frequencies) using low-pass filtering and OCR",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "license": "MIT",
       "author": {
         "name": "Haroon K M",
