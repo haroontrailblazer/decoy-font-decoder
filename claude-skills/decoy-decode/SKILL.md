@@ -109,16 +109,31 @@ inv = 255 - img.astype(np.float32)          # text mass -> bright
 sigma = max(img.shape) * 0.01               # ~1% of the long edge kills thin outlines
 low = cv2.GaussianBlur(inv, (0, 0), sigmaX=sigma)
 
-# hidden message: only the blurred mass survives the low-pass filter
-norm = cv2.normalize(low, None, 0, 255, cv2.NORM_MINMAX)
-revealed = (255 - np.power(norm / 255.0, 0.6) * 255).astype(np.uint8)
+# hidden message: gamma-boost the surviving low-frequency mass — keep it
+# grayscale; hard thresholds destroy the letterforms
+norm = cv2.normalize(low, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+revealed = (np.power(norm / 255.0, 0.6) * 255).astype(np.uint8)
 
 # decoy message: what remains after removing the low-frequency mass
 high = np.clip(inv - low, 0, None)
-high = cv2.normalize(high, None, 0, 255, cv2.NORM_MINMAX)
-decoy = (255 - high).astype(np.uint8)
+high = cv2.normalize(high, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
-cv2.imwrite(os.path.join(OUT, "revealed.png"), revealed)
-cv2.imwrite(os.path.join(OUT, "decoy.png"), decoy)
+# crop both layers to the text and enlarge, so the letters stay big and
+# readable even after chat-UI downscaling
+def crop_to_text(layer, ref, pad_frac=0.06, min_side=1200):
+    ys, xs = np.where(ref > 127)
+    if ys.size:
+        span = max(int(ys.max()) - int(ys.min()), int(xs.max()) - int(xs.min()))
+        pad = int(pad_frac * span) + 8
+        layer = layer[max(0, int(ys.min()) - pad):int(ys.max()) + pad + 1,
+                      max(0, int(xs.min()) - pad):int(xs.max()) + pad + 1]
+    f = min_side / max(layer.shape)
+    if f > 1:
+        layer = cv2.resize(layer, (int(layer.shape[1] * f), int(layer.shape[0] * f)),
+                           interpolation=cv2.INTER_CUBIC)
+    return layer
+
+cv2.imwrite(os.path.join(OUT, "revealed.png"), 255 - crop_to_text(revealed, norm))
+cv2.imwrite(os.path.join(OUT, "decoy.png"), 255 - crop_to_text(high, norm))
 print("done — wrote revealed.png (hidden text) and decoy.png (fake sharp layer)")
 ```

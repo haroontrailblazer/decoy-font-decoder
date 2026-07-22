@@ -10,7 +10,10 @@ This decoder recovers both layers:
      leaving only the blurred mass — the hidden message,
   2. subtracting that low-pass layer leaves only the sharp outlines —
      the decoy message,
-  3. contrast-stretch both, save them, OCR the revealed layer (optional).
+  3. gamma-boost the hidden layer (kept grayscale — the letter identity
+     lives in the blur gradients), crop both layers to the text and enlarge
+     — so the letters stay big and readable even when a chat UI downscales
+     the image — then OCR the revealed layer (optional).
 
 Usage:
   python decode.py decoy-message.png
@@ -39,22 +42,42 @@ def split_layers(img, sigma_frac=0.01, gamma=0.6):
     The hidden letters are pure blur — they survive a heavy low-pass filter.
     The decoy outlines are thin strokes with almost no ink mass — the same
     filter erases them completely. Sigma is scaled to the image size so the
-    split works at any resolution.
+    split works at any resolution. The hidden layer stays grayscale (hard
+    thresholds destroy letterforms whose identity lives in the blur
+    gradients); both layers are cropped to the text and enlarged so the
+    letters survive chat-UI downscaling.
     """
     inv = 255 - img.astype(np.float32)  # text mass -> bright
     sigma = max(img.shape) * sigma_frac
     low = cv2.GaussianBlur(inv, (0, 0), sigmaX=sigma)
+    norm = cv2.normalize(low, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
-    # hidden message: keep the low-pass mass, boost contrast, dark-on-white
-    norm = cv2.normalize(low, None, 0, 255, cv2.NORM_MINMAX)
-    revealed = (255 - np.power(norm / 255.0, gamma) * 255).astype(np.uint8)
+    # hidden message: gamma-boost the surviving low-frequency mass
+    revealed_gray = (np.power(norm / 255.0, gamma) * 255).astype(np.uint8)
 
     # decoy message: what remains after removing the low-frequency mass
     high = np.clip(inv - low, 0, None)
-    high = cv2.normalize(high, None, 0, 255, cv2.NORM_MINMAX)
-    decoy = (255 - high).astype(np.uint8)
+    high = cv2.normalize(high, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
+    revealed = 255 - crop_to_text(revealed_gray, norm)
+    decoy = 255 - crop_to_text(high, norm)
     return revealed, decoy
+
+
+def crop_to_text(layer, mask, pad_frac=0.06, min_side=1200):
+    """Crop to the text bounding box and enlarge, so letters are big and
+    obvious instead of small shapes lost in a mostly-empty frame."""
+    ys, xs = np.where(mask > 127)
+    if ys.size:
+        span = max(int(ys.max()) - int(ys.min()), int(xs.max()) - int(xs.min()))
+        pad = int(pad_frac * span) + 8
+        layer = layer[max(0, int(ys.min()) - pad):int(ys.max()) + pad + 1,
+                      max(0, int(xs.min()) - pad):int(xs.max()) + pad + 1]
+    f = min_side / max(layer.shape)
+    if f > 1:
+        layer = cv2.resize(layer, (int(layer.shape[1] * f), int(layer.shape[0] * f)),
+                           interpolation=cv2.INTER_CUBIC)
+    return layer
 
 
 def find_tesseract():
@@ -92,15 +115,13 @@ def main():
     ap.add_argument("-o", "--out-dir", default=".", help="directory for output images (default: current dir)")
     ap.add_argument("--sigma-frac", type=float, default=0.01,
                     help="low-pass sigma as a fraction of the long edge (default 0.01)")
-    ap.add_argument("--gamma", type=float, default=0.6,
-                    help="gamma boost for the revealed layer (default 0.6)")
     ap.add_argument("--no-ocr", action="store_true", help="skip the OCR step")
     args = ap.parse_args()
 
     os.makedirs(args.out_dir, exist_ok=True)
     print(f"Decoding {args.image} (sigma-frac {args.sigma_frac})")
     img = load_gray(args.image)
-    revealed, decoy = split_layers(img, args.sigma_frac, args.gamma)
+    revealed, decoy = split_layers(img, args.sigma_frac)
 
     revealed_path = os.path.join(args.out_dir, "revealed.png")
     decoy_path = os.path.join(args.out_dir, "decoy.png")
