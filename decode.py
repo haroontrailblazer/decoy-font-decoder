@@ -63,9 +63,43 @@ def split_layers(img, sigma_frac=0.005, gamma=0.6):
     high = np.clip(inv - low, 0, None)
     high = cv2.normalize(high, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
-    revealed = 255 - crop_to_text(revealed_gray, norm)
+    stacked = stack_lines(revealed_gray, norm)
+    f = 1600 / max(stacked.shape)
+    if f > 1:
+        stacked = cv2.resize(stacked, (int(stacked.shape[1] * f), int(stacked.shape[0] * f)),
+                             interpolation=cv2.INTER_CUBIC)
+    revealed = 255 - stacked
     decoy = 255 - crop_to_text(high, norm)
     return revealed, decoy
+
+
+def stack_lines(layer, ref, gap=40):
+    """Split the text into its lines and stack them tightly, so every line
+    fills the frame at maximum letter size."""
+    rows = (ref > 127).any(axis=1)
+    bands, in_band, start = [], False, 0
+    for i, r in enumerate(rows):
+        if r and not in_band:
+            start, in_band = i, True
+        elif not r and in_band:
+            bands.append((start, i)); in_band = False
+    if in_band:
+        bands.append((start, len(rows)))
+    bands = [b for b in bands if b[1] - b[0] > 10]
+    if len(bands) <= 1:
+        return layer
+    pieces = []
+    for y0, y1 in bands:
+        xs = np.where((ref[y0:y1] > 127).any(axis=0))[0]
+        pieces.append(layer[max(0, y0 - gap // 2):y1 + gap // 2,
+                            max(0, int(xs.min()) - gap // 2):int(xs.max()) + gap // 2])
+    canvas = np.zeros((sum(p.shape[0] for p in pieces) + gap * (len(pieces) - 1),
+                       max(p.shape[1] for p in pieces)), dtype=layer.dtype)
+    y = 0
+    for p in pieces:
+        canvas[y:y + p.shape[0], :p.shape[1]] = p
+        y += p.shape[0] + gap
+    return canvas
 
 
 def wiener_deconv(img_f, sigma, K=0.02):
