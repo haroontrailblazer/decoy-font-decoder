@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: https://ogp.me/ns#">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<meta name="color-scheme" content="light dark">
+<title>Technical Documentation — Decoy Font Decoder</title>
+<meta name="description" content="Technical documentation for Decoy Font Decoder: spatial-frequency separation, Gaussian filtering, layer subtraction, OCR, CLI usage, and agent verification.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://decoy-font-decoder.vercel.app/docs">
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="assets/brand-icon.webp">
+<meta property="og:title" content="Decoy Font Decoder — Technical Documentation">
+<meta property="og:description" content="How frequency-hidden text is reconstructed with classic computer vision.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://decoy-font-decoder.vercel.app/docs">
+<link rel="stylesheet" href="code-viewer.css">
+<meta property="og:image" content="https://decoy-font-decoder.vercel.app/assets/og-image-v4.webp">
+<meta property="og:image:type" content="image/webp">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Decoy Font Decoder — the message is in the blur">
+<style>
+  :root {
+    --paper: #ffffff;
+    --ink: #090a09;
+    --ink-soft: #171917;
+    --muted: #626660;
+    --line: #d9dcd6;
+    --line-dark: #343732;
+    --signal: #9cff00;
+    --signal-deep: #61a900;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --sans: "Helvetica Neue", Helvetica, Arial, "Segoe UI", Roboto, sans-serif;
+    --mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", Consolas, "Liberation Mono", monospace;
+    --wide: 1440px;
+    --gutter: clamp(20px, 4.5vw, 72px);
+    --section: clamp(88px, 10vw, 144px);
+  }
+
+  * { box-sizing: border-box; }
+  html {
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    background: var(--paper);
+  }
+  html::-webkit-scrollbar { display: none; }
+  body {
+    margin: 0;
+    overflow-x: hidden;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection { background: var(--signal); color: var(--ink); }
+  img { max-width: 100%; }
+  a { color: inherit; }
+  button, a { -webkit-tap-highlight-color: transparent; }
+  button { font: inherit; }
+  [id] { scroll-margin-top: 104px; }
+
+  .skip-link {
+    position: fixed;
+    left: 16px;
+    top: 12px;
+    z-index: 100;
+    padding: 10px 14px;
+    background: var(--signal);
+    color: var(--ink);
+    font-weight: 700;
+    text-decoration: none;
+    transform: translateY(-160%);
+    transition: transform 160ms ease;
+  }
+  .skip-link:focus { transform: translateY(0); }
+
+  .shell {
+    width: min(100%, var(--wide));
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
+  .site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 1px solid rgba(9, 10, 9, 0.18);
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(14px);
+  }
+  .nav-inner {
+    min-height: 82px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--serif);
+    font-size: clamp(1.28rem, 2vw, 1.72rem);
+    line-height: 1;
+    letter-spacing: -0.035em;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .brand-mark {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+    display: block;
+    border-radius: 10px;
+    object-fit: cover;
+  }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: clamp(20px, 3vw, 44px);
+  }
+  .nav-links a {
+    position: relative;
+    color: var(--ink);
+    font-size: 0.92rem;
+    text-decoration: none;
+  }
+  .nav-links a:not(.nav-github)::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 100%;
+    bottom: -7px;
+    height: 2px;
+    background: var(--signal-deep);
+    transition: right 180ms ease;
+  }
+  .nav-links a:hover::after,
+  .nav-links a:focus-visible::after { right: 0; }
+  .nav-github {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-weight: 600;
+  }
+  .nav-github svg { width: 16px; height: 16px; }
+
+  .doc-hero {
+    min-height: calc(100svh - 82px);
+    display: grid;
+    align-items: center;
+    padding-block: clamp(56px, 7vw, 104px);
+    border-bottom: 1px solid var(--ink);
+  }
+  .doc-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(360px, 0.8fr) minmax(560px, 1.2fr);
+    align-items: center;
+    gap: clamp(56px, 7vw, 112px);
+  }
+  .doc-hero h1 {
+    max-width: 640px;
+    margin: 0;
+    font-family: var(--serif);
+    font-size: clamp(4.5rem, 7.3vw, 7.4rem);
+    font-weight: 400;
+    letter-spacing: -0.065em;
+    line-height: 0.84;
+  }
+  .hero-rule {
+    width: 88px;
+    height: 7px;
+    margin: 36px 0 26px;
+    background: var(--signal);
+  }
+  .doc-hero-lede {
+    max-width: 560px;
+    margin: 0;
+    font-size: clamp(1.08rem, 1.45vw, 1.32rem);
+    line-height: 1.55;
+    letter-spacing: -0.016em;
+  }
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 32px;
+  }
+  .button {
+    min-height: 54px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 0 22px;
+    border: 1px solid var(--ink);
+    color: var(--ink);
+    font-size: 0.94rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: transform 180ms ease, background 180ms ease, color 180ms ease;
+  }
+  .button-primary { border-color: var(--signal); background: var(--signal); }
+  .button-secondary { background: var(--paper); }
+  .button:hover { transform: translateY(-2px); }
+  .button-secondary:hover { background: var(--ink); color: var(--paper); }
+  .button svg { width: 18px; height: 18px; }
+
+  .signal-proof {
+    margin: 0;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    box-shadow: 0 24px 70px rgba(7, 10, 6, 0.18);
+  }
+  .signal-proof-head {
+    min-height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 0 16px;
+    color: var(--paper);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.055em;
+    text-transform: uppercase;
+  }
+  .signal-proof-head span:last-child { color: var(--signal); }
+  .signal-proof-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid #454844;
+  }
+  .signal-proof-panel { min-width: 0; background: #080908; }
+  .signal-proof-panel + .signal-proof-panel { border-left: 1px solid #454844; }
+  .signal-proof-media {
+    position: relative;
+    height: clamp(250px, 27vw, 390px);
+    overflow: hidden;
+  }
+  .signal-proof-media img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    filter: grayscale(1) contrast(1.12);
+  }
+  .signal-proof-panel:last-child .signal-proof-media img {
+    object-fit: contain;
+    object-position: center;
+  }
+  .signal-proof-caption {
+    min-height: 54px;
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    border-top: 1px solid #454844;
+    color: #d4d8d1;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    line-height: 1.45;
+  }
+
+  .doc-layout {
+    display: grid;
+    grid-template-columns: 245px minmax(0, 1fr);
+    gap: clamp(56px, 8vw, 124px);
+    align-items: start;
+    padding-block: var(--section);
+  }
+  .toc {
+    position: sticky;
+    top: 114px;
+    border-top: 2px solid var(--ink);
+  }
+  .toc-title {
+    margin: 0;
+    padding: 18px 0 14px;
+    border-bottom: 1px solid var(--ink);
+    color: var(--signal-deep);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+  .toc a {
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    gap: 8px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.86rem;
+    line-height: 1.35;
+    text-decoration: none;
+    transition: color 160ms ease, padding-left 160ms ease;
+  }
+  .toc a span {
+    color: var(--signal-deep);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+  }
+  .toc a:hover,
+  .toc a:focus-visible,
+  .toc a.is-active {
+    padding-left: 8px;
+    color: var(--ink);
+  }
+
+  .doc-content { min-width: 0; }
+  .doc-section {
+    padding-bottom: clamp(90px, 10vw, 142px);
+  }
+  .doc-section + .doc-section {
+    padding-top: clamp(90px, 10vw, 142px);
+    border-top: 1px solid var(--ink);
+  }
+  .section-label {
+    margin: 0 0 20px;
+    color: var(--signal-deep);
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+  .section-title {
+    max-width: 930px;
+    margin: 0;
+    font-family: var(--serif);
+    font-size: clamp(3.2rem, 5.5vw, 5.6rem);
+    font-weight: 400;
+    letter-spacing: -0.052em;
+    line-height: 0.94;
+  }
+  .section-intro {
+    max-width: 790px;
+    margin: 34px 0 0;
+    color: #282b27;
+    font-size: clamp(1.05rem, 1.35vw, 1.2rem);
+    line-height: 1.72;
+  }
+  .section-intro strong { color: var(--ink); }
+
+  .concept-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(38px, 6vw, 82px);
+    margin-top: 58px;
+  }
+  .concept-block {
+    border-top: 2px solid var(--ink);
+    padding-top: 24px;
+  }
+  .concept-number {
+    color: var(--signal-deep);
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+  }
+  .concept-block h3 {
+    margin: 22px 0 14px;
+    font-family: var(--serif);
+    font-size: clamp(1.85rem, 3vw, 2.7rem);
+    font-weight: 400;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  .concept-block p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.96rem;
+    line-height: 1.7;
+  }
+
+  .equation {
+    margin-top: 54px;
+    overflow-x: auto;
+    padding: 30px 34px;
+    border: 1px solid var(--ink);
+    background: #0d0f0d;
+    color: #e8ebe5;
+    font-family: var(--mono);
+  }
+  .equation-label {
+    display: block;
+    margin-bottom: 18px;
+    color: var(--signal);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .equation code {
+    font-size: clamp(0.88rem, 1.35vw, 1.08rem);
+    line-height: 1.8;
+    white-space: pre;
+  }
+  .equation-note {
+    margin: 20px 0 0;
+    color: #aeb3aa;
+    font-size: 0.84rem;
+    line-height: 1.6;
+  }
+
+  .pipeline {
+    margin-top: 62px;
+    border-top: 2px solid var(--ink);
+  }
+  .pipeline-step {
+    display: grid;
+    grid-template-columns: 90px minmax(220px, 0.42fr) minmax(0, 1fr);
+    gap: clamp(22px, 4vw, 56px);
+    padding: 34px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .pipeline-number {
+    color: var(--signal-deep);
+    font-family: var(--mono);
+    font-size: clamp(2rem, 3.2vw, 3.2rem);
+    line-height: 1;
+  }
+  .pipeline-step h3 {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: clamp(1.55rem, 2.4vw, 2.2rem);
+    font-weight: 400;
+    letter-spacing: -0.03em;
+    line-height: 1.04;
+  }
+  .pipeline-detail p {
+    margin: 0 0 16px;
+    color: var(--muted);
+    font-size: 0.94rem;
+    line-height: 1.67;
+  }
+  .pipeline-detail p:last-child { margin-bottom: 0; }
+  .pipeline-detail strong { color: var(--ink); }
+  .inline-code {
+    padding: 0.14em 0.38em;
+    background: #eef0eb;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 0.84em;
+  }
+
+  .implementation-note {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 38px;
+    margin-top: 54px;
+    padding: 30px 0;
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+  }
+  .implementation-note h3 {
+    margin: 0;
+    color: var(--signal-deep);
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .implementation-note p {
+    margin: 0;
+    color: #282b27;
+    line-height: 1.72;
+  }
+
+  .output-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    margin-top: 58px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+  }
+  .output-card {
+    min-width: 0;
+    background: var(--paper);
+  }
+  .output-media {
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #090a09;
+  }
+  .output-media img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
+  }
+  .output-copy { padding: 24px 26px 28px; }
+  .output-copy span {
+    color: var(--signal-deep);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+  .output-copy h3 {
+    margin: 13px 0 10px;
+    font-family: var(--serif);
+    font-size: 1.8rem;
+    font-weight: 400;
+    letter-spacing: -0.025em;
+  }
+  .output-copy p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.65;
+  }
+
+  .code-shell {
+    margin-top: 52px;
+    border: 1px solid #222;
+    background: #0d0f0d;
+    color: #e8ebe5;
+  }
+  .code-head {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 0 18px;
+    border-bottom: 1px solid #454844;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .copy-button {
+    border: 0;
+    background: transparent;
+    color: var(--signal);
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+  .code-shell pre {
+    margin: 0;
+    overflow-x: auto;
+    padding: 28px;
+    color: #e8ebe5;
+    font-family: var(--mono);
+    font-size: clamp(0.76rem, 1.1vw, 0.9rem);
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
+  .code-accent { color: var(--signal); }
+
+  .parameter-table {
+    width: 100%;
+    margin-top: 42px;
+    border-collapse: collapse;
+    border-top: 2px solid var(--ink);
+  }
+  .parameter-table th,
+  .parameter-table td {
+    padding: 19px 16px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+  }
+  .parameter-table th {
+    color: var(--signal-deep);
+    font-family: var(--mono);
+    font-size: 0.69rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+  .parameter-table td {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+  .parameter-table td:first-child {
+    width: 29%;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+  }
+
+  .failure-list {
+    margin-top: 52px;
+    border-top: 2px solid var(--ink);
+  }
+  .failure-item {
+    display: grid;
+    grid-template-columns: 0.8fr 1.2fr;
+    gap: clamp(34px, 6vw, 86px);
+    padding: 31px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .failure-item h3 {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: clamp(1.45rem, 2.4vw, 2.1rem);
+    font-weight: 400;
+    letter-spacing: -0.025em;
+  }
+  .failure-item p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.65;
+  }
+  .failure-item strong { color: var(--ink); }
+
+  .proof-gallery {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 26px;
+    margin-top: 58px;
+  }
+  .proof-card {
+    margin: 0;
+    border-top: 2px solid var(--ink);
+  }
+  .proof-button {
+    width: 100%;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: #080908;
+    cursor: zoom-in;
+  }
+  .proof-card img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    display: block;
+    object-fit: cover;
+    object-position: top left;
+  }
+  .proof-card figcaption {
+    min-height: 92px;
+    padding: 18px 0 0;
+    border-top: 1px solid var(--ink);
+    color: var(--muted);
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+  .proof-card figcaption strong {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .verdict {
+    margin-top: 58px;
+    padding: clamp(40px, 6vw, 74px);
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .verdict-label {
+    margin: 0 0 22px;
+    color: var(--signal);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+  .verdict blockquote {
+    max-width: 900px;
+    margin: 0;
+    font-family: var(--serif);
+    font-size: clamp(2.5rem, 4.6vw, 4.8rem);
+    font-weight: 400;
+    letter-spacing: -0.045em;
+    line-height: 0.98;
+  }
+  .verdict p:last-child {
+    max-width: 760px;
+    margin: 32px 0 0;
+    color: #c8cbc5;
+    line-height: 1.7;
+  }
+
+  .media-lightbox {
+    box-sizing: border-box;
+    width: fit-content;
+    height: fit-content;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+    padding: 0;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    color: var(--paper);
+  }
+  .media-lightbox[open] {
+    display: block;
+  }
+  .media-lightbox::backdrop { background: rgb(0 0 0 / 0.88); }
+  .lightbox-frame {
+    position: relative;
+    width: fit-content;
+    height: fit-content;
+    padding: 0.5cm;
+    background: #080908;
+  }
+  .media-lightbox img {
+    width: auto;
+    height: auto;
+    max-width: calc(100vw - 1cm - 18px);
+    max-height: calc(100dvh - 1cm - 18px);
+    margin: 0;
+    display: block;
+    object-fit: contain;
+  }
+  .lightbox-close {
+    position: absolute;
+    top: -18px;
+    right: -18px;
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #8b9188;
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--ink);
+    font: 700 1.25rem/1 var(--sans);
+    cursor: pointer;
+  }
+  .lightbox-close:hover,
+  .lightbox-close:focus-visible { background: var(--signal); outline: none; }
+
+  .site-footer {
+    overflow: hidden;
+    background: var(--ink);
+    color: var(--paper);
+    padding-top: 72px;
+  }
+  .footer-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 44px;
+    padding-bottom: 58px;
+    border-bottom: 1px solid var(--line-dark);
+  }
+  .footer-group h2 {
+    margin: 0 0 18px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .footer-group a {
+    width: max-content;
+    display: block;
+    margin: 9px 0;
+    color: #bdc1ba;
+    font-size: 0.9rem;
+    text-decoration: none;
+  }
+  .footer-group a:hover,
+  .footer-group a:focus-visible { color: var(--signal); }
+  .footer-wordmark {
+    max-width: 100%;
+    margin: 0;
+    padding: 46px 0 14px;
+    font-size: clamp(3.1rem, 8.4vw, 8.7rem);
+    font-weight: 800;
+    letter-spacing: -0.075em;
+    line-height: 0.78;
+    white-space: nowrap;
+  }
+  .footer-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+    padding: 30px 0 36px;
+    color: #7f847c;
+    font-size: 0.78rem;
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(22px);
+    transition: opacity 700ms ease, transform 700ms ease;
+  }
+  .reveal.is-visible { opacity: 1; transform: none; }
+
+  @media (min-width: 1101px) {
+    .doc-hero {
+      padding-block: clamp(30px, 5svh, 64px);
+    }
+    .doc-hero h1 {
+      font-size: clamp(4rem, min(6.4vw, 12svh), 6.3rem);
+    }
+    .doc-hero h1 .hero-line {
+      display: block;
+      white-space: nowrap;
+    }
+    .hero-rule {
+      margin: 24px 0 18px;
+    }
+    .hero-actions {
+      margin-top: 22px;
+    }
+  }
+
+  .button:focus-visible,
+  .copy-button:focus-visible,
+  .proof-button:focus-visible,
+  .nav-links a:focus-visible,
+  .brand:focus-visible,
+  .toc a:focus-visible {
+    outline: 3px solid var(--signal);
+    outline-offset: 4px;
+  }
+
+  @media (max-width: 1100px) {
+    .doc-hero { min-height: auto; }
+    .doc-hero-grid { grid-template-columns: 1fr; }
+    .doc-hero-copy { max-width: 760px; }
+    .signal-proof { max-width: 820px; }
+    .doc-layout {
+      grid-template-columns: 1fr;
+      gap: 64px;
+    }
+    .toc {
+      position: static;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid var(--ink);
+    }
+    .toc-title { grid-column: 1 / -1; }
+    .toc a { padding-right: 16px; }
+    .pipeline-step {
+      grid-template-columns: 70px minmax(180px, 0.4fr) 1fr;
+    }
+  }
+
+  @media (max-width: 760px) {
+    :root { --section: 82px; }
+    .nav-inner { min-height: 68px; }
+    .nav-links a:not(.nav-github) { display: none; }
+    .brand { font-size: 1.15rem; }
+    .brand-mark { width: 34px; height: 34px; border-radius: 8px; }
+    .doc-hero {
+      padding-block: 58px 72px;
+    }
+    .doc-hero h1 { font-size: clamp(4rem, 19vw, 6rem); }
+    .hero-rule { height: 5px; margin: 28px 0 22px; }
+    .hero-actions { flex-direction: column; }
+    .button { width: 100%; }
+    .signal-proof-grid { grid-template-columns: 1fr; }
+    .signal-proof-panel + .signal-proof-panel { border-left: 0; border-top: 1px solid #454844; }
+    .signal-proof-media { height: 250px; }
+    .toc { grid-template-columns: 1fr 1fr; }
+    .section-title { font-size: clamp(3rem, 15vw, 4.8rem); }
+    .concept-grid,
+    .output-grid,
+    .proof-gallery { grid-template-columns: 1fr; }
+    .pipeline-step {
+      grid-template-columns: 52px 1fr;
+      gap: 18px;
+    }
+    .pipeline-detail { grid-column: 2; }
+    .implementation-note,
+    .failure-item {
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+    .parameter-table { display: block; overflow-x: auto; }
+    .parameter-table th,
+    .parameter-table td { min-width: 150px; }
+    .parameter-table td:first-child { min-width: 190px; }
+    .media-lightbox { width: fit-content; }
+    .lightbox-close { top: 8px; right: 8px; }
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+    .footer-wordmark {
+      font-size: clamp(2.8rem, 15vw, 5.6rem);
+      white-space: normal;
+      line-height: 0.84;
+    }
+    .footer-meta { flex-direction: column; gap: 6px; }
+  }
+
+  @media (max-width: 460px) {
+    .nav-github span { display: none; }
+    .toc { grid-template-columns: 1fr; }
+    .equation { padding: 22px 18px; }
+    .code-shell pre { padding: 22px 18px; }
+    .footer-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    .reveal { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to documentation</a>
+
+<header class="site-nav">
+  <div class="shell nav-inner">
+    <a class="brand" href="index.html" aria-label="Decoy Font Decoder home">
+      <img class="brand-mark" src="assets/brand-icon.webp" alt="" width="40" height="40">
+      <span>Decoy Font Decoder</span>
+    </a>
+    <nav class="nav-links" aria-label="Documentation navigation">
+      <a href="#concept">Concept</a>
+      <a href="#pipeline">Pipeline</a>
+      <a href="#cli">CLI</a>
+      <a href="#proof">Proof</a>
+      <a class="nav-github" href="https://github.com/haroontrailblazer/decoy-font-decoder">
+        <span>GitHub</span>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M7 17 17 7M8 7h9v9"/>
+        </svg>
+      </a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <section class="doc-hero" id="top">
+    <div class="shell doc-hero-grid">
+      <div class="doc-hero-copy reveal">
+        <h1>
+          <span class="hero-line">The message</span>
+          <span class="hero-line">is in the blur.</span>
+        </h1>
+        <div class="hero-rule" aria-hidden="true"></div>
+        <p class="doc-hero-lede">
+          Decoy fonts hide two messages at different spatial frequencies.
+          This guide explains the complete decoder: from Gaussian low-pass filtering to
+          layer subtraction, contrast recovery, optional OCR, and agent verification.
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#pipeline">
+            Read the pipeline
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+          </a>
+          <a class="button button-secondary" href="https://github.com/haroontrailblazer/decoy-font-decoder/blob/main/decode.py" data-code-viewer="https://raw.githubusercontent.com/haroontrailblazer/decoy-font-decoder/main/decode.py">
+            Read decode.py
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M7 17 17 7M8 7h9v9"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <figure class="signal-proof reveal">
+        <div class="signal-proof-head">
+          <span>Same image · two frequency bands</span>
+          <span>Blur recovered</span>
+        </div>
+        <div class="signal-proof-grid">
+          <div class="signal-proof-panel">
+            <div class="signal-proof-media">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-slot="assets/paused-frame.webp" alt="">
+            </div>
+            <figcaption class="signal-proof-caption">Raw image: sharp outlines pull attention toward the decoy text.</figcaption>
+          </div>
+          <div class="signal-proof-panel">
+            <div class="signal-proof-media">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-slot="assets/proof/recovered-binary-mask.webp" alt="">
+            </div>
+            <figcaption class="signal-proof-caption">Low-pass result: blurred letter mass becomes readable.</figcaption>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <div class="shell doc-layout">
+    <aside class="toc" aria-label="On this page">
+      <p class="toc-title">On this page</p>
+      <a href="#concept"><span>01</span>Signal model</a>
+      <a href="#pipeline"><span>02</span>Decoder pipeline</a>
+      <a href="#implementation"><span>03</span>Implementation</a>
+      <a href="#outputs"><span>04</span>Outputs</a>
+      <a href="#cli"><span>05</span>CLI reference</a>
+      <a href="#failures"><span>06</span>Failure modes</a>
+      <a href="#proof"><span>07</span>Agent proof</a>
+      <a href="#security"><span>08</span>Security meaning</a>
+    </aside>
+
+    <article class="doc-content">
+      <section class="doc-section reveal" id="concept">
+        <p class="section-label">01 · Signal model</p>
+        <h2 class="section-title">One image, two spatial frequency bands.</h2>
+        <p class="section-intro">
+          A decoy-font glyph combines a <strong>sharp thin-outline letter</strong> with a
+          broad blurred letter. Both occupy the same area, but they distribute ink very
+          differently—and that difference makes the layers separable.
+        </p>
+
+        <div class="concept-grid">
+          <div class="concept-block">
+            <span class="concept-number">A · High frequency</span>
+            <h3>The outline is the decoy</h3>
+            <p>
+              Thin, crisp strokes create strong local edges with very little total ink mass.
+              OCR and naive visual reads lock onto those edges and confidently return the
+              planted fake text.
+            </p>
+          </div>
+          <div class="concept-block">
+            <span class="concept-number">B · Low frequency</span>
+            <h3>The blur is the message</h3>
+            <p>
+              Wide, soft letter shapes spread more ink over a larger area. They survive
+              aggressive Gaussian smoothing even after the thin outline strokes have
+              effectively disappeared.
+            </p>
+          </div>
+          <div class="concept-block">
+            <span class="concept-number">C · Perception</span>
+            <h3>Scale decides the reading</h3>
+            <p>
+              At normal size the outline dominates. Squint, step back, or downsample and
+              the sharp detail is suppressed while the broad hidden glyph becomes easier
+              to see.
+            </p>
+          </div>
+          <div class="concept-block">
+            <span class="concept-number">D · Separation</span>
+            <h3>Both layers are recoverable</h3>
+            <p>
+              A low-pass filter recovers the hidden message. Subtracting that low-frequency
+              result from the inverted input isolates the sharp decoy outlines as a second
+              verifiable image.
+            </p>
+          </div>
+        </div>
+
+        <div class="equation" aria-label="Core spatial-frequency separation equation">
+          <span class="equation-label">Core signal</span>
+          <code>I(x)      = 255 − image(x)
+σ         = 0.01 × max(width, height)
+hidden(x) = Gσ * I(x)
+decoy(x)  = max(I(x) − hidden(x), 0)</code>
+          <p class="equation-note">
+            Inversion turns ink mass into signal. The Gaussian low-pass retains the broad hidden
+            letters while erasing thin outlines. Normalization and gamma make the hidden layer
+            readable; the high-frequency remainder becomes the isolated decoy layer.
+          </p>
+        </div>
+      </section>
+
+      <section class="doc-section reveal" id="pipeline">
+        <p class="section-label">02 · Decoder pipeline</p>
+        <h2 class="section-title">From one image to two readable layers.</h2>
+        <p class="section-intro">
+          The production decoder is deliberately classical: OpenCV and NumPy perform
+          the recovery, while OCR is a final optional reader rather than the source of the signal.
+        </p>
+
+        <div class="pipeline">
+          <div class="pipeline-step">
+            <div class="pipeline-number">01</div>
+            <h3>Load the image in grayscale</h3>
+            <div class="pipeline-detail">
+              <p>
+                OpenCV reads the input directly as an 8-bit grayscale image. Grayscale is
+                sufficient because the separation depends on spatial frequency and ink mass,
+                not on color.
+              </p>
+              <p>
+                If the file cannot be opened, the command stops with an explicit path error
+                instead of producing misleading blank outputs.
+              </p>
+            </div>
+          </div>
+
+          <div class="pipeline-step">
+            <div class="pipeline-number">02</div>
+            <h3>Invert ink into signal</h3>
+            <div class="pipeline-detail">
+              <p>
+                Subtracting the image from 255 turns dark strokes into high values. Both the
+                soft hidden letters and the crisp outline strokes can then be filtered and
+                subtracted numerically.
+              </p>
+              <p>
+                The array is converted to floating point before filtering so intermediate
+                values keep their precision.
+              </p>
+            </div>
+          </div>
+
+          <div class="pipeline-step">
+            <div class="pipeline-number">03</div>
+            <h3>Scale sigma to the image</h3>
+            <div class="pipeline-detail">
+              <p>
+                Sigma is the long edge multiplied by <span class="inline-code">--sigma-frac</span>.
+                The 0.01 default adapts the blur radius to different source resolutions.
+              </p>
+              <p>
+                Resolution-aware scaling avoids a fixed pixel radius that works on one image
+                size but fails on another.
+              </p>
+            </div>
+          </div>
+
+          <div class="pipeline-step">
+            <div class="pipeline-number">04</div>
+            <h3>Apply the Gaussian low-pass</h3>
+            <div class="pipeline-detail">
+              <p>
+                A Gaussian blur with the computed sigma removes narrow, high-frequency outline
+                strokes while preserving the wide low-frequency letter mass.
+              </p>
+              <p>
+                This is the computational equivalent of squinting or viewing the image from
+                farther away.
+              </p>
+            </div>
+          </div>
+
+          <div class="pipeline-step">
+            <div class="pipeline-number">05</div>
+            <h3>Normalize the hidden mass</h3>
+            <div class="pipeline-detail">
+              <p>
+                The low-pass result is stretched across the full 0–255 range. This makes faint
+                but coherent blurred letters use the available contrast.
+              </p>
+              <p>
+                Normalization is deterministic and operates on the complete image rather than
+                guessing individual character boundaries.
+              </p>
+            </div>
+          </div>
+
+          <div class="pipeline-step">
+            <div class="pipeline-number">06</div>
+            <h3>Gamma-boost the reveal</h3>
+            <div class="pipeline-detail">
+              <p>
+                A default gamma of 0.6 strengthens the surviving soft shapes, then the result
+                is inverted back to dark text on a white background.
+              </p>
+              <p>
+                The resulting <span class="inline-code">revealed.png</span> is the authoritative
+                image for reading the real hidden message.
+              </p>
+            </div>
+          </div>
+
+          <div class="pipeline-step">
+            <div class="pipeline-number">07</div>
+            <h3>Subtract the hidden layer</h3>
+            <div class="pipeline-detail">
+              <p>
+                The blurred low-frequency mass is subtracted from the inverted source. Negative
+                values are clipped to zero, leaving the high-frequency remainder.
+              </p>
+              <p>
+                That remainder contains the thin outline letters used as the planted decoy text.
+              </p>
+            </div>
+          </div>
+
+          <div class="pipeline-step">
+            <div class="pipeline-number">08</div>
+            <h3>Normalize and write both files</h3>
+            <div class="pipeline-detail">
+              <p>
+                The high-frequency remainder is normalized and inverted into dark-on-white
+                <span class="inline-code">decoy.png</span>. The low-frequency result is written
+                as <span class="inline-code">revealed.png</span>.
+              </p>
+              <p>
+                The output contract is always exactly two images so the agent can verify both
+                readings without accumulating diagnostic variants.
+              </p>
+            </div>
+          </div>
+
+          <div class="pipeline-step">
+            <div class="pipeline-number">09</div>
+            <h3>Run optional OCR and verify</h3>
+            <div class="pipeline-detail">
+              <p>
+                Tesseract receives <span class="inline-code">revealed.png</span> with page
+                segmentation mode 6 and can provide a rough text hint when installed.
+              </p>
+              <p>
+                OCR is never treated as ground truth. The agent inspects both generated images,
+                reports the real and fake texts, and marks any ambiguous glyph explicitly.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="doc-section reveal" id="implementation">
+        <p class="section-label">03 · Implementation details</p>
+        <h2 class="section-title">The controls tune scale, not meaning.</h2>
+        <p class="section-intro">
+          Each value controls a clear stage of the frequency split. The defaults match the
+          bundled examples and remain predictable across image resolutions.
+        </p>
+
+        <table class="parameter-table">
+          <thead>
+            <tr>
+              <th>Value</th>
+              <th>Role</th>
+              <th>Why it exists</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>sigma fraction = 0.01</td>
+              <td>Scale the Gaussian blur</td>
+              <td>About one percent of the long edge removes thin outline strokes.</td>
+            </tr>
+            <tr>
+              <td>sigma fraction = 0.015</td>
+              <td>Only permitted retry</td>
+              <td>Helps when the reveal still contains too much sharp outline detail.</td>
+            </tr>
+            <tr>
+              <td>gamma = 0.6</td>
+              <td>Boost revealed contrast</td>
+              <td>Strengthens faint low-frequency mass without thresholding characters.</td>
+            </tr>
+            <tr>
+              <td>NORM_MINMAX</td>
+              <td>Use the full tonal range</td>
+              <td>Makes both separated layers visually inspectable.</td>
+            </tr>
+            <tr>
+              <td>float32 processing</td>
+              <td>Preserve filter precision</td>
+              <td>Avoids destructive clipping during blur and subtraction.</td>
+            </tr>
+            <tr>
+              <td>clip at zero</td>
+              <td>Keep positive remainder</td>
+              <td>Prevents the subtracted high-frequency layer from wrapping below black.</td>
+            </tr>
+            <tr>
+              <td>PSM 6</td>
+              <td>Optional OCR layout</td>
+              <td>Treats the revealed result as one uniform block of text.</td>
+            </tr>
+            <tr>
+              <td>--no-ocr</td>
+              <td>Disable text recognition</td>
+              <td>Both visual outputs remain complete when Tesseract is unavailable.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="implementation-note">
+          <h3>Complexity</h3>
+          <p>
+            For an image of width W and height H, filtering and subtraction require approximately
+            O(WH) work and O(WH) live memory for the grayscale, low-pass, and output arrays.
+          </p>
+        </div>
+
+        <div class="implementation-note">
+          <h3>Trust boundary</h3>
+          <p>
+            The algorithm runs locally in the environment executing the skill. No model weights are
+            needed for recovery, and the image is not required to leave that environment. OCR can be
+            disabled entirely with <span class="inline-code">--no-ocr</span>.
+          </p>
+        </div>
+      </section>
+
+      <section class="doc-section reveal" id="outputs">
+        <p class="section-label">04 · Outputs</p>
+        <h2 class="section-title">Two images answer two different questions.</h2>
+        <p class="section-intro">
+          The revealed layer answers “what does the hidden message say?” The decoy layer answers
+          “what sharp fake text was planted for the machine?”
+        </p>
+
+        <div class="output-grid">
+          <article class="output-card">
+            <div class="output-media">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-slot="assets/revealed.webp" alt="" loading="lazy">
+            </div>
+            <div class="output-copy">
+              <span>revealed.png</span>
+              <h3>Real hidden message</h3>
+              <p>
+                Dark, soft glyphs on white after low-pass filtering, normalization, and gamma
+                boost. This is the authoritative layer to read.
+              </p>
+            </div>
+          </article>
+          <article class="output-card">
+            <div class="output-media">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-slot="assets/decoy.webp" alt="" loading="lazy">
+            </div>
+            <div class="output-copy">
+              <span>decoy.png</span>
+              <h3>Fake sharp message</h3>
+              <p>
+                The normalized high-frequency remainder left after subtracting the blurred
+                mass. It records the trap the raw image encourages AI to read.
+              </p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="doc-section reveal" id="cli">
+        <p class="section-label">05 · CLI reference</p>
+        <h2 class="section-title">Run the same decoder without an agent.</h2>
+        <p class="section-intro">
+          Python 3.8+, OpenCV, and NumPy are required. Tesseract and pytesseract are optional.
+          The images are still generated when OCR is unavailable.
+        </p>
+
+        <div class="code-shell">
+          <div class="code-head">
+            <span>Install and decode</span>
+            <button class="copy-button" type="button" data-copy="cli-basic">Copy</button>
+          </div>
+          <pre id="cli-basic">pip install -r requirements.txt
+python decode.py decoy-font-message.png</pre>
+        </div>
+
+        <div class="code-shell">
+          <div class="code-head">
+            <span>Tuned run</span>
+            <button class="copy-button" type="button" data-copy="cli-tuned">Copy</button>
+          </div>
+          <pre id="cli-tuned">python decode.py decoy-font-message.png \
+  -o decoded \
+  --sigma-frac 0.015 \
+  --gamma 0.6 \
+  --no-ocr</pre>
+        </div>
+
+        <table class="parameter-table">
+          <thead>
+            <tr>
+              <th>Argument</th>
+              <th>Default</th>
+              <th>Behavior</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>image</td>
+              <td>required</td>
+              <td>Path to a PNG, JPEG, WebP, or any image readable by the installed OpenCV build.</td>
+            </tr>
+            <tr>
+              <td>-o, --out-dir</td>
+              <td>current directory</td>
+              <td>Destination for revealed.png and decoy.png.</td>
+            </tr>
+            <tr>
+              <td>--sigma-frac</td>
+              <td>0.01</td>
+              <td>Sets Gaussian sigma as a fraction of the image's long edge.</td>
+            </tr>
+            <tr>
+              <td>--gamma</td>
+              <td>0.6</td>
+              <td>Controls contrast enhancement for the revealed low-frequency layer.</td>
+            </tr>
+            <tr>
+              <td>pytesseract</td>
+              <td>optional</td>
+              <td>Provides a rough OCR hint when the Tesseract executable is available.</td>
+            </tr>
+            <tr>
+              <td>--no-ocr</td>
+              <td>false</td>
+              <td>Skips Tesseract while preserving both visual outputs.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="doc-section reveal" id="failures">
+        <p class="section-label">06 · Failure modes</p>
+        <h2 class="section-title">What weak evidence means—and what to try next.</h2>
+
+        <div class="failure-list">
+          <div class="failure-item">
+            <h3>Sharp outlines remain</h3>
+            <p>
+              The blur radius is too small for the source resolution. Retry the same decoder once
+              with <strong>--sigma-frac 0.015</strong> so more thin outline detail is removed.
+            </p>
+          </div>
+          <div class="failure-item">
+            <h3>Hidden letters merge together</h3>
+            <p>
+              Sigma is too large or the original blurred glyphs overlap heavily. Return toward the
+              0.01 default so neighboring soft shapes remain distinguishable.
+            </p>
+          </div>
+          <div class="failure-item">
+            <h3>The reveal looks washed out</h3>
+            <p>
+              Adjust <span class="inline-code">--gamma</span> conservatively. Lower values strengthen
+              faint mass; higher values preserve more tonal separation between adjacent shapes.
+            </p>
+          </div>
+          <div class="failure-item">
+            <h3>One character is missing</h3>
+            <p>
+              Inspect <span class="inline-code">revealed.png</span> before concluding the character is
+              absent. Soft, rounded, blobby letters are the expected output—not a decoding defect.
+            </p>
+          </div>
+          <div class="failure-item">
+            <h3>OCR disagrees with the image</h3>
+            <p>
+              Trust visual evidence over OCR. Tesseract can confuse softened strokes. The agent
+              workflow requires opening both output images, verifying both texts, and marking
+              ambiguous characters.
+            </p>
+          </div>
+          <div class="failure-item">
+            <h3>Tesseract is unavailable</h3>
+            <p>
+              This is not a decoding failure. The computer-vision pipeline still writes both images.
+              Read the revealed layer directly or install Tesseract later; use <span class="inline-code">--no-ocr</span>
+              to skip the check explicitly.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="doc-section reveal" id="proof">
+        <p class="section-label">07 · Agent proof</p>
+        <h2 class="section-title">The screenshots are executions, not mockups.</h2>
+        <p class="section-intro">
+          These original-size spaces are reserved for Claude Code, Claude.ai, and Codex
+          execution captures. Add the screenshots later without changing the gallery layout.
+        </p>
+
+        <div class="proof-gallery">
+          <figure class="proof-card">
+            <button class="proof-button" type="button" data-image="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-image-slot="assets/proof/claude-code-decoded.webp" aria-label="Open Claude Code proof at full resolution">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-slot="assets/proof/claude-code-decoded.webp" alt="" loading="lazy">
+            </button>
+            <figcaption>
+              <strong>Claude Code</strong>
+              Reserved for a Claude Code run showing revealed.png, decoy.png, and both reported texts.
+            </figcaption>
+          </figure>
+
+          <figure class="proof-card">
+            <button class="proof-button" type="button" data-image="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-image-slot="assets/proof/codex-decoded.webp" aria-label="Open Codex proof at full resolution">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-slot="assets/proof/codex-decoded.webp" alt="" loading="lazy">
+            </button>
+            <figcaption>
+              <strong>Codex</strong>
+              Reserved for a Codex run invoking the installed skill and displaying both output layers.
+            </figcaption>
+          </figure>
+
+          <figure class="proof-card">
+            <button class="proof-button" type="button" data-image="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-image-slot="assets/proof/claude-ai-decoded.webp" aria-label="Open Claude.ai decode proof at full resolution">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-slot="assets/proof/claude-ai-decoded.webp" alt="" loading="lazy">
+            </button>
+            <figcaption>
+              <strong>Claude.ai</strong>
+              Reserved for a Claude.ai run using the uploadable skill and returning both evidence files.
+            </figcaption>
+          </figure>
+
+          <figure class="proof-card">
+            <button class="proof-button" type="button" data-image="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-image-slot="assets/proof/claude-ai-reveal.webp" aria-label="Open recovered mask proof at full resolution">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-slot="assets/proof/claude-ai-reveal.webp" alt="" loading="lazy">
+            </button>
+            <figcaption>
+              <strong>Recovered layers</strong>
+              Reserved for the final side-by-side revealed and decoy output comparison.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="doc-section reveal" id="security">
+        <p class="section-label">08 · Security meaning</p>
+        <h2 class="section-title">Obfuscation changes the sensor, not the information.</h2>
+        <p class="section-intro">
+          Decoy fonts can defeat tools that privilege crisp edges, but they do not remove the
+          signal. They move the real message to a lower spatial frequency.
+        </p>
+
+        <div class="verdict">
+          <p class="verdict-label">Technical verdict</p>
+          <blockquote>
+            If a human can reveal the words by squinting, a system that applies the equivalent low-pass filter can reveal them too.
+          </blockquote>
+          <p>
+            Gaussian filtering, contrast normalization, and layer subtraction are established
+            image-processing operations. The decoder does not break encryption because no
+            encryption exists. It reconstructs a deliberately preserved visual signal from the
+            viewing scale at which that signal was encoded.
+          </p>
+        </div>
+      </section>
+    </article>
+  </div>
+</main>
+
+<dialog class="media-lightbox" id="proof-lightbox" aria-label="Full-resolution proof image">
+  <div class="lightbox-frame">
+  <button class="lightbox-close" type="button" aria-label="Close full-resolution image">×</button>
+    <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-slot="assets/proof/codex-decoded.webp" alt="">
+  </div>
+</dialog>
+
+<footer class="site-footer">
+  <div class="shell">
+    <div class="footer-grid">
+      <div class="footer-group">
+        <h2>Documentation</h2>
+        <a href="#concept">Signal model</a>
+        <a href="#pipeline">Pipeline</a>
+        <a href="#cli">CLI reference</a>
+        <a href="#failures">Failure modes</a>
+      </div>
+      <div class="footer-group">
+        <h2>Outputs</h2>
+        <a href="#outputs">Revealed layer</a>
+        <a href="#outputs">Decoy layer</a>
+        <a href="#proof">Agent proof</a>
+      </div>
+      <div class="footer-group">
+        <h2>Project</h2>
+        <a href="index.html">Project home</a>
+        <a href="https://github.com/haroontrailblazer/decoy-font-decoder" data-repo-viewer="https://api.github.com/repos/haroontrailblazer/decoy-font-decoder/git/trees/main?recursive=1" data-readme-viewer="https://raw.githubusercontent.com/haroontrailblazer/decoy-font-decoder/main/README.md">Source</a>
+        <a href="https://github.com/haroontrailblazer/decoy-font-decoder/blob/main/decode.py" data-code-viewer="https://raw.githubusercontent.com/haroontrailblazer/decoy-font-decoder/main/decode.py">Python CLI</a>
+        <a href="https://github.com/haroontrailblazer/decoy-font-decoder/blob/main/LICENSE" data-text-viewer="https://raw.githubusercontent.com/haroontrailblazer/decoy-font-decoder/main/LICENSE" data-viewer-title="LICENSE">MIT License</a>
+      </div>
+      <div class="footer-group">
+        <h2>Author</h2>
+        <a href="https://haroon.pro">Haroon K M</a>
+        <a href="https://github.com/haroontrailblazer">@haroontrailblazer</a>
+      </div>
+    </div>
+
+    <p class="footer-wordmark" aria-label="Read the blur">READ THE BLUR</p>
+    <div class="footer-meta">
+      <span>© 2026 Haroon K M · MIT License</span>
+      <span>Technical documentation for frequency-hidden text recovery.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="code-viewer.js"></script>
+<script>
+(() => {
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const lightbox = document.getElementById("proof-lightbox");
+  const lightboxImage = lightbox?.querySelector("img");
+  const lightboxClose = lightbox?.querySelector(".lightbox-close");
+
+  document.querySelectorAll(".proof-button").forEach((button) => {
+    button.addEventListener("click", async () => {
+      if (!lightbox || !lightboxImage) return;
+      const preview = button.querySelector("img");
+      lightboxImage.src = button.dataset.image;
+      lightboxImage.alt = preview?.alt || "Full-resolution execution proof";
+      try {
+        await lightboxImage.decode();
+      } catch {
+        // The dialog can still display the browser's loaded image fallback.
+      }
+      lightbox.showModal();
+    });
+  });
+  lightboxClose?.addEventListener("click", () => lightbox?.close());
+  lightbox?.addEventListener("click", (event) => {
+    if (event.target === lightbox) lightbox.close();
+  });
+
+  document.querySelectorAll(".copy-button").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const target = document.getElementById(button.dataset.copy);
+      if (!target) return;
+      try {
+        await navigator.clipboard.writeText(target.innerText.trim());
+        button.textContent = "Copied";
+      } catch {
+        const range = document.createRange();
+        range.selectNodeContents(target);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        const copied = typeof document.execCommand === "function" && document.execCommand("copy");
+        button.textContent = copied ? "Copied" : "Selected";
+      }
+      window.setTimeout(() => { button.textContent = "Copy"; }, 1800);
+    });
+  });
+
+  if (!reduceMotion && "IntersectionObserver" in window) {
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.08 });
+    document.querySelectorAll(".reveal").forEach((element) => revealObserver.observe(element));
+
+    const tocLinks = new Map(
+      Array.from(document.querySelectorAll(".toc a")).map((link) => [
+        link.getAttribute("href").slice(1),
+        link
+      ])
+    );
+    const sectionObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        tocLinks.forEach((link) => link.classList.remove("is-active"));
+        tocLinks.get(entry.target.id)?.classList.add("is-active");
+      });
+    }, { rootMargin: "-18% 0px -68% 0px" });
+    document.querySelectorAll(".doc-section[id]").forEach((section) => sectionObserver.observe(section));
+  } else {
+    document.querySelectorAll(".reveal").forEach((element) => element.classList.add("is-visible"));
+  }
+})();
+</script>
+</body>
+</html>

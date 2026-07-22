@@ -1,0 +1,1954 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: https://ogp.me/ns#">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<meta name="color-scheme" content="light dark">
+<title>Decoy Font Decoder — the sharp text is the trap</title>
+<meta name="description" content="Decoy Font Decoder separates the real blurred message from the sharp fake outlines in decoy-font images.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://decoy-font-decoder.vercel.app/">
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="assets/brand-icon.webp">
+<link rel="image_src" href="https://decoy-font-decoder.vercel.app/assets/og-image-v4.webp">
+<meta itemprop="name" content="Decoy Font Decoder">
+<meta itemprop="description" content="The sharp text is the trap. The message is the blur.">
+<meta itemprop="image" content="https://decoy-font-decoder.vercel.app/assets/og-image-v4.webp">
+<meta property="og:title" content="Decoy Font Decoder">
+<meta property="og:description" content="The sharp text is the trap. The message is the blur.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://decoy-font-decoder.vercel.app/">
+<link rel="stylesheet" href="code-viewer.css">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://decoy-font-decoder.vercel.app/assets/og-image-v4.webp">
+<meta property="og:image:url" content="https://decoy-font-decoder.vercel.app/assets/og-image-v4.webp">
+<meta property="og:image:secure_url" content="https://decoy-font-decoder.vercel.app/assets/og-image-v4.webp">
+<meta property="og:image:type" content="image/webp">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Decoy Font Decoder — the message is in the blur">
+<meta property="og:site_name" content="Decoy Font Decoder">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:domain" content="decoy-font-decoder.vercel.app">
+<meta name="twitter:url" content="https://decoy-font-decoder.vercel.app/">
+<meta name="twitter:title" content="Decoy Font Decoder">
+<meta name="twitter:description" content="The sharp text is the trap. The message is the blur.">
+<meta name="twitter:image" content="https://decoy-font-decoder.vercel.app/assets/og-image-v4.webp">
+<meta name="twitter:image:alt" content="Decoy Font Decoder — the message is in the blur">
+<style>
+  :root {
+    --paper: #ffffff;
+    --ink: #090a09;
+    --ink-soft: #171917;
+    --muted: #626660;
+    --line: #d9dcd6;
+    --line-dark: #343732;
+    --signal: #9cff00;
+    --signal-deep: #61a900;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --sans: "Helvetica Neue", Helvetica, Arial, "Segoe UI", Roboto, sans-serif;
+    --mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", Consolas, "Liberation Mono", monospace;
+    --wide: 1440px;
+    --gutter: clamp(20px, 4.5vw, 72px);
+    --section: clamp(88px, 10vw, 152px);
+  }
+
+  * { box-sizing: border-box; }
+  html {
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    background: var(--paper);
+  }
+  html::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+  body {
+    margin: 0;
+    overflow-x: hidden;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection { background: var(--signal); color: var(--ink); }
+  img { max-width: 100%; }
+  a { color: inherit; }
+  button, a { -webkit-tap-highlight-color: transparent; }
+  button { font: inherit; }
+  [id] { scroll-margin-top: 88px; }
+
+  .skip-link {
+    position: fixed;
+    left: 16px;
+    top: 12px;
+    z-index: 100;
+    padding: 10px 14px;
+    background: var(--signal);
+    color: var(--ink);
+    font-weight: 700;
+    text-decoration: none;
+    transform: translateY(-160%);
+    transition: transform 160ms ease;
+  }
+  .skip-link:focus { transform: translateY(0); }
+
+  .shell {
+    width: min(100%, var(--wide));
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
+  .site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 1px solid rgba(9, 10, 9, 0.18);
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(14px);
+  }
+  .nav-inner {
+    min-height: 82px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--serif);
+    font-size: clamp(1.28rem, 2vw, 1.72rem);
+    line-height: 1;
+    letter-spacing: -0.035em;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .brand-mark {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+    display: block;
+    border-radius: 10px;
+    object-fit: cover;
+  }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: clamp(22px, 3.5vw, 52px);
+  }
+  .nav-links a {
+    position: relative;
+    color: var(--ink);
+    font-size: 0.95rem;
+    text-decoration: none;
+  }
+  .nav-links a:not(.nav-github)::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 100%;
+    bottom: -7px;
+    height: 2px;
+    background: var(--signal-deep);
+    transition: right 180ms ease;
+  }
+  .nav-links a:hover::after,
+  .nav-links a:focus-visible::after { right: 0; }
+  .nav-github {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-weight: 600;
+  }
+  .nav-github svg { width: 16px; height: 16px; }
+
+  .hero {
+    min-height: calc(100svh - 82px);
+    display: grid;
+    align-items: center;
+    padding-block: clamp(54px, 8vw, 116px);
+    border-bottom: 1px solid var(--ink);
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: minmax(300px, 0.8fr) minmax(520px, 1.25fr);
+    align-items: center;
+    gap: clamp(54px, 7vw, 118px);
+  }
+  .hero-copy h1 {
+    max-width: 610px;
+    margin: 0;
+    font-family: var(--serif);
+    font-size: clamp(4.9rem, 8.3vw, 8.4rem);
+    font-weight: 400;
+    letter-spacing: -0.065em;
+    line-height: 0.79;
+  }
+  .hero-rule {
+    width: 88px;
+    height: 7px;
+    margin: 40px 0 28px;
+    background: var(--signal);
+  }
+  .hero-lede {
+    max-width: 460px;
+    margin: 0;
+    font-size: clamp(1.14rem, 1.7vw, 1.46rem);
+    line-height: 1.45;
+    letter-spacing: -0.018em;
+  }
+  .hero-lede strong { font-weight: 750; }
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 34px;
+  }
+  .button {
+    min-height: 56px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 0 24px;
+    border: 1px solid var(--ink);
+    color: var(--ink);
+    font-size: 0.98rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: transform 180ms ease, background 180ms ease, color 180ms ease;
+  }
+  .button svg { width: 18px; height: 18px; }
+  .button-primary { background: var(--signal); border-color: var(--signal); }
+  .button-secondary { background: var(--paper); }
+  .button:hover { transform: translateY(-2px); }
+  .button-secondary:hover { background: var(--ink); color: var(--paper); }
+  .button:focus-visible,
+  .copy-button:focus-visible,
+  .nav-links a:focus-visible,
+  .brand:focus-visible {
+    outline: 3px solid var(--signal);
+    outline-offset: 4px;
+  }
+
+  .decoder-window {
+    position: relative;
+    width: min(100%, 640px);
+    height: 490px;
+    justify-self: end;
+    display: grid;
+    grid-template-rows: 47px minmax(0, 1fr) 47px 180px;
+    overflow: hidden;
+    border: 1px solid #222;
+    background: #050605;
+    color: #fff;
+    box-shadow: 0 24px 70px rgba(7, 10, 6, 0.2);
+  }
+  .decoder-bar,
+  .decoder-output-label {
+    min-height: 47px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 0 18px;
+    border-bottom: 1px solid #454844;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.055em;
+    text-transform: uppercase;
+  }
+  .decoder-state { color: var(--signal); }
+  .noise-stage {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+    background: #050605;
+  }
+  .noise-stage img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    filter: grayscale(1) contrast(1.25);
+    opacity: 0.86;
+  }
+  .noise-stage::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 64%, #050605 100%);
+    pointer-events: none;
+  }
+  .scan-line {
+    position: absolute;
+    z-index: 2;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 2px;
+    background: var(--signal);
+    box-shadow: 0 0 14px rgba(156, 255, 0, 0.85);
+    animation: scan 3.2s ease-in-out infinite;
+  }
+  @keyframes scan {
+    0%, 8% { transform: translateY(10px); opacity: 0; }
+    18% { opacity: 1; }
+    82% { opacity: 1; }
+    92%, 100% { transform: translateY(300px); opacity: 0; }
+  }
+  .progress-track {
+    position: absolute;
+    z-index: 3;
+    left: 16px;
+    right: 16px;
+    bottom: 12px;
+    height: 2px;
+    background: #62665f;
+  }
+  .progress-track::before {
+    content: "";
+    display: block;
+    width: 58%;
+    height: 100%;
+    background: var(--signal);
+  }
+  .progress-track::after {
+    content: "";
+    position: absolute;
+    left: 58%;
+    top: 50%;
+    width: 11px;
+    height: 11px;
+    background: var(--signal);
+    transform: translate(-50%, -50%);
+  }
+  .decoder-output-label {
+    justify-content: flex-start;
+    border-top: 1px solid #454844;
+    border-bottom: 0;
+  }
+  .decoded-message {
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 28px 20px 32px;
+    border-top: 1px solid #252825;
+  }
+  #scramble {
+    max-width: 100%;
+    color: var(--signal);
+    font-family: var(--mono);
+    font-size: 2.15rem;
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: 0.055em;
+    overflow-wrap: anywhere;
+    text-align: center;
+    text-transform: uppercase;
+  }
+  #scramble .ghost { color: #5f6856; }
+
+  .section {
+    padding-block: var(--section);
+  }
+  .section-label {
+    margin: 0 0 22px;
+    color: var(--signal-deep);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+  .section-title {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: clamp(3rem, 6.2vw, 6rem);
+    font-weight: 400;
+    letter-spacing: -0.05em;
+    line-height: 0.96;
+  }
+  .short-rule {
+    width: 56px;
+    height: 3px;
+    margin-top: 26px;
+    background: var(--ink);
+  }
+  .body-copy {
+    color: #282b27;
+    font-size: clamp(1rem, 1.35vw, 1.16rem);
+    line-height: 1.75;
+  }
+  .body-copy p { margin: 0 0 24px; }
+  .body-copy p:last-child { margin-bottom: 0; }
+  .body-copy strong { color: var(--ink); }
+
+  .intro-grid {
+    display: grid;
+    grid-template-columns: minmax(300px, 0.72fr) minmax(520px, 1.28fr);
+    gap: clamp(60px, 9vw, 150px);
+    align-items: start;
+  }
+  .intro-copy .body-copy { max-width: 570px; margin-top: 38px; }
+  .evidence-frame {
+    margin: 0;
+    border-top: 2px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+  }
+  .evidence-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .evidence-item { min-width: 0; }
+  .evidence-item + .evidence-item { border-left: 1px solid var(--ink); }
+  .evidence-head,
+  .evidence-caption {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.055em;
+    text-transform: uppercase;
+  }
+  .evidence-head { border-bottom: 1px solid var(--ink); }
+  .evidence-caption { border-top: 1px solid var(--ink); text-transform: none; letter-spacing: 0; }
+  .evidence-media {
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #080908;
+  }
+  .evidence-media img,
+  .evidence-media video {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+  .evidence-item--agent .evidence-media img {
+    object-fit: contain;
+    filter: contrast(1.04);
+  }
+  .evidence-image-button {
+    width: 100%;
+    height: 100%;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: #080908;
+    color: inherit;
+    cursor: zoom-in;
+  }
+  .evidence-image-button:focus-visible {
+    outline: 4px solid var(--signal);
+    outline-offset: -4px;
+  }
+  .media-lightbox {
+    box-sizing: border-box;
+    width: fit-content;
+    height: fit-content;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+    padding: 0;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    color: var(--paper);
+  }
+  .media-lightbox[open] {
+    display: block;
+  }
+  .media-lightbox::backdrop { background: rgb(0 0 0 / 0.88); }
+  .lightbox-frame {
+    position: relative;
+    width: fit-content;
+    height: fit-content;
+    padding: 0.5cm;
+    background: #080908;
+  }
+  .media-lightbox img {
+    width: auto;
+    height: auto;
+    max-width: calc(100vw - 1cm - 18px);
+    max-height: calc(100dvh - 1cm - 18px);
+    margin: 0;
+    display: block;
+    object-fit: contain;
+  }
+  .lightbox-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #8b9188;
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--ink);
+    font: 700 1.25rem/1 var(--sans);
+    cursor: pointer;
+  }
+  .lightbox-close:hover,
+  .lightbox-close:focus-visible {
+    background: var(--signal);
+    outline: none;
+  }
+
+  .process {
+    padding-top: clamp(86px, 10vw, 142px);
+  }
+  .process-heading {
+    display: grid;
+    grid-template-columns: 1.35fr 0.65fr;
+    gap: clamp(40px, 8vw, 120px);
+    align-items: end;
+    padding-bottom: 48px;
+    border-bottom: 1px solid var(--ink);
+  }
+  .process-heading .body-copy { max-width: 470px; }
+  .process-rail {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-bottom: 1px solid var(--ink);
+  }
+  .process-step {
+    position: relative;
+    min-height: 320px;
+    padding: 54px clamp(18px, 2.2vw, 34px) 38px 0;
+  }
+  .process-step:not(:last-child) { border-right: 1px solid var(--line); }
+  .process-step:not(:first-child) { padding-left: clamp(18px, 2.2vw, 34px); }
+  .process-step::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 28px;
+    height: 2px;
+    background: var(--signal-deep);
+  }
+  .process-step::after {
+    content: "";
+    position: absolute;
+    top: 21px;
+    left: 0;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--signal-deep);
+    border-radius: 50%;
+    background: var(--paper);
+  }
+  .step-number {
+    color: var(--signal-deep);
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    font-weight: 700;
+  }
+  .process-step h3 {
+    min-height: 2.5em;
+    margin: 34px 0 16px;
+    font-family: var(--serif);
+    font-size: clamp(1.55rem, 2.2vw, 2.15rem);
+    font-weight: 400;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
+  .process-step p {
+    max-width: 260px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  .claim {
+    overflow: hidden;
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .claim .section { padding-block: clamp(100px, 11vw, 168px); }
+  .claim .section-label { color: var(--signal); }
+  .claim-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    align-items: start;
+    gap: clamp(56px, 7vw, 112px);
+  }
+  .claim-copy h2 {
+    max-width: 590px;
+    margin: 0;
+    font-family: var(--serif);
+    font-size: clamp(3.35rem, 4.8vw, 5.5rem);
+    font-weight: 400;
+    letter-spacing: -0.055em;
+    line-height: 0.9;
+  }
+  .claim-copy .body-copy {
+    max-width: 520px;
+    margin-top: 40px;
+    color: #d2d5cf;
+  }
+  .claim-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 22px;
+    margin-top: 38px;
+    padding-top: 28px;
+    border-top: 1px solid var(--line-dark);
+    color: var(--signal);
+    font-family: var(--mono);
+    font-size: 0.86rem;
+    line-height: 1.6;
+  }
+  .claim-note svg { width: 34px; height: 34px; flex: 0 0 auto; }
+  .verdict-list { border-top: 1px solid var(--line-dark); }
+  .verdict-item {
+    display: grid;
+    grid-template-columns: 86px 1fr;
+    gap: 22px;
+    padding: 34px 0;
+    border-bottom: 1px solid var(--line-dark);
+  }
+  .verdict-number {
+    color: var(--signal);
+    font-family: var(--mono);
+    font-size: clamp(2.2rem, 3.3vw, 3.6rem);
+    line-height: 1;
+  }
+  .verdict-kicker {
+    margin: 0 0 8px;
+    color: var(--signal);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .verdict-item h3 {
+    margin: 0;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #686d65;
+    font-family: var(--mono);
+    font-size: clamp(1.08rem, 1.8vw, 1.45rem);
+    font-weight: 400;
+    line-height: 1.35;
+  }
+  .verdict-item p {
+    max-width: 620px;
+    margin: 18px 0 0;
+    color: #c8cbc5;
+    font-size: 0.96rem;
+    line-height: 1.65;
+  }
+
+  .real-proof {
+    overflow: hidden;
+    overflow-anchor: chat proof;
+    border-bottom: 1px solid var(--ink);
+  }
+  .proof-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(390px, 0.72fr);
+    align-items: end;
+    gap: clamp(48px, 8vw, 132px);
+    margin-bottom: clamp(34px, 5vw, 60px);
+  }
+  .proof-header-copy .section-title { max-width: 760px; }
+  .proof-intro {
+    max-width: 560px;
+    justify-self: end;
+  }
+  .proof-intro .body-copy { margin-bottom: 24px; }
+  .proof-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--ink);
+  }
+  .proof-tab {
+    min-height: 54px;
+    padding: 10px 16px;
+    border: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .proof-tab + .proof-tab { border-left: 1px solid var(--ink); }
+  .proof-tab[aria-selected="true"] {
+    background: var(--ink);
+    color: var(--signal);
+  }
+  .proof-tab:hover:not([aria-selected="true"]) { background: #f0f2ed; }
+  .proof-tab:focus-visible {
+    position: relative;
+    z-index: 1;
+    outline: 3px solid var(--signal);
+    outline-offset: 3px;
+  }
+  .proof-stage {
+    border-top: 2px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+  }
+  .proof-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .proof-panel[hidden] { display: none; }
+  .proof-card { min-width: 0; }
+  .proof-card + .proof-card { border-left: 1px solid var(--ink); }
+  .proof-card-head,
+  .proof-card-caption {
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 11px 16px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+  }
+  .proof-card-head {
+    border-bottom: 1px solid var(--ink);
+    letter-spacing: 0.055em;
+    text-transform: uppercase;
+  }
+  .proof-outcome {
+    color: var(--signal-deep);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .proof-card-caption {
+    justify-content: flex-start;
+    border-top: 1px solid var(--ink);
+    color: var(--muted);
+    line-height: 1.45;
+  }
+  .proof-media {
+    height: clamp(235px, 28svh, 330px);
+    overflow: hidden;
+    background: #090a09;
+  }
+  .proof-image-button {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: #090a09;
+    cursor: zoom-in;
+  }
+  .proof-image-button img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    object-position: center var(--proof-focus, 55%);
+    transform: scale(1.015);
+    transition: filter 180ms ease, transform 240ms ease;
+  }
+  .proof-image-button::after {
+    content: "Open full chat ↗";
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    padding: 9px 12px;
+    border: 1px solid var(--signal);
+    background: rgb(9 10 9 / 0.9);
+    color: var(--signal);
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.055em;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+  .proof-image-button:hover img {
+    filter: brightness(1.08);
+    transform: scale(1.035);
+  }
+  .proof-image-button:focus-visible {
+    outline: 4px solid var(--signal);
+    outline-offset: -4px;
+  }
+
+  .install-header {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    align-items: end;
+    gap: 60px;
+    margin-bottom: 48px;
+  }
+  .install-header .body-copy { max-width: 460px; justify-self: end; }
+  .install-ledger { border-top: 1px solid var(--ink); }
+  .install-row {
+    display: grid;
+    grid-template-columns: 72px minmax(190px, 0.46fr) minmax(360px, 1.25fr) 100px;
+    gap: 28px;
+    align-items: center;
+    min-height: 128px;
+    padding-block: 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .install-number {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+  .install-name {
+    padding-left: 28px;
+    border-left: 2px solid var(--signal);
+  }
+  .install-name h3 {
+    margin: 0 0 4px;
+    font-family: var(--serif);
+    font-size: 1.42rem;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .install-name p { margin: 0; color: var(--muted); font-size: 0.88rem; }
+  .code-block {
+    min-width: 0;
+    margin: 0;
+    overflow-x: auto;
+    padding: 22px 24px;
+    border: 1px solid #1e211e;
+    background: #0d0f0d;
+    color: #e8ebe5;
+    font-family: var(--mono);
+    font-size: clamp(0.72rem, 1vw, 0.88rem);
+    line-height: 1.55;
+    white-space: pre-wrap;
+    scrollbar-color: var(--signal) #181b18;
+  }
+  .code-accent { color: var(--signal); }
+  .code-file-link {
+    text-decoration: underline;
+    text-decoration-color: rgb(200 255 0 / 0.45);
+    text-underline-offset: 3px;
+  }
+  .code-file-link:hover,
+  .code-file-link:focus-visible {
+    color: #e5ff80;
+    text-decoration-color: currentColor;
+    outline: none;
+  }
+  .copy-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 0;
+    background: transparent;
+    color: var(--signal-deep);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+  .copy-button svg { width: 17px; height: 17px; }
+  .copy-button:hover { color: var(--ink); }
+
+  .site-footer {
+    overflow: hidden;
+    background: var(--ink);
+    color: var(--paper);
+    padding-top: 72px;
+  }
+  .footer-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 44px;
+    padding-bottom: 58px;
+    border-bottom: 1px solid var(--line-dark);
+  }
+  .footer-group h2 {
+    margin: 0 0 18px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .footer-group a {
+    width: max-content;
+    display: block;
+    margin: 9px 0;
+    color: #bdc1ba;
+    font-size: 0.9rem;
+    text-decoration: none;
+  }
+  .footer-group a:hover,
+  .footer-group a:focus-visible { color: var(--signal); }
+  .footer-wordmark {
+    max-width: 100%;
+    margin: 0;
+    padding: 46px 0 14px;
+    font-size: clamp(3.1rem, 8.4vw, 8.7rem);
+    font-weight: 800;
+    letter-spacing: -0.075em;
+    line-height: 0.78;
+    white-space: nowrap;
+  }
+  .footer-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+    padding: 30px 0 36px;
+    color: #7f847c;
+    font-size: 0.78rem;
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 700ms ease, transform 700ms ease;
+  }
+  .reveal.is-visible { opacity: 1; transform: none; }
+
+  @media (min-width: 1101px) {
+    .hero,
+    #what > .intro-grid,
+    .process,
+    .claim .section,
+    .real-proof,
+    #install {
+      min-height: calc(100svh - 82px);
+    }
+
+    #what {
+      padding-block: 0;
+    }
+    #what > .intro-grid {
+      align-items: center;
+      padding-block: clamp(32px, 6svh, 72px);
+    }
+    .section-title {
+      font-size: clamp(2.7rem, min(5.2vw, 9svh), 5.5rem);
+    }
+    .intro-copy .body-copy {
+      margin-top: clamp(22px, 4svh, 38px);
+    }
+
+    .process {
+      display: grid;
+      align-content: center;
+      padding-top: clamp(32px, 5svh, 64px);
+      padding-bottom: clamp(32px, 5svh, 64px);
+    }
+    .process-heading {
+      padding-bottom: clamp(20px, 4svh, 40px);
+    }
+    .process-rail {
+      align-items: stretch;
+    }
+    .process-step {
+      min-height: clamp(200px, 29svh, 280px);
+      padding-top: clamp(42px, 7svh, 54px);
+      padding-bottom: clamp(22px, 4svh, 38px);
+    }
+    .process-step h3 {
+      margin-top: clamp(22px, 4svh, 34px);
+      margin-bottom: clamp(10px, 2svh, 16px);
+    }
+
+    .claim .section {
+      align-items: center;
+      padding-block: clamp(28px, 5svh, 64px);
+    }
+    .claim-copy h2 {
+      font-size: clamp(2.7rem, min(4.1vw, 7svh), 5rem);
+    }
+    .claim-copy .body-copy {
+      margin-top: clamp(20px, 4svh, 36px);
+    }
+    .claim-note {
+      margin-top: clamp(20px, 4svh, 34px);
+      padding-top: clamp(16px, 3svh, 26px);
+    }
+    .verdict-item {
+      padding-block: clamp(14px, 2.5svh, 28px);
+    }
+    .verdict-item p {
+      margin-top: clamp(10px, 2svh, 16px);
+    }
+
+    .real-proof {
+      display: grid;
+      align-content: start;
+      padding-block: clamp(28px, 4svh, 48px);
+    }
+
+    #install {
+      display: grid;
+      align-content: center;
+      padding-block: clamp(28px, 5svh, 64px);
+    }
+    .install-header {
+      margin-bottom: clamp(18px, 3.5svh, 36px);
+    }
+    .install-row {
+      min-height: clamp(70px, 10svh, 104px);
+      padding-block: clamp(8px, 1.5svh, 14px);
+    }
+    .code-block {
+      padding: clamp(10px, 2svh, 18px) 20px;
+    }
+  }
+
+  @media (max-height: 800px) and (min-width: 901px) {
+    .hero {
+      min-height: calc(100svh - 82px);
+      padding-block: 42px 50px;
+    }
+    .hero-copy h1 { font-size: clamp(4.7rem, 7.4vw, 7rem); }
+    .hero-rule { margin: 28px 0 20px; }
+    .hero-lede { font-size: 1.12rem; }
+    .hero-actions { margin-top: 24px; }
+    .button { min-height: 50px; }
+    .decoder-window { height: 490px; }
+    .decoded-message { padding-block: 20px; }
+  }
+
+  @media (max-height: 720px) and (min-width: 1101px) {
+    .hero {
+      padding-block: 28px 32px;
+    }
+    .hero-copy h1 {
+      font-size: clamp(4rem, min(6.8vw, 11svh), 6.2rem);
+    }
+    .hero-rule { margin: 20px 0 16px; }
+    .hero-actions { margin-top: 18px; }
+    .decoder-window {
+      height: min(420px, calc(100svh - 122px));
+      grid-template-rows: 42px minmax(0, 1fr) 42px 132px;
+    }
+    .decoder-bar,
+    .decoder-output-label { min-height: 42px; }
+    .decoded-message { padding-block: 10px; }
+
+    #what > .intro-grid,
+    .process,
+    .claim .section,
+    .real-proof,
+    #install {
+      padding-top: 24px;
+      padding-bottom: 24px;
+    }
+    .section-label { margin-bottom: 14px; }
+    .section-title {
+      font-size: clamp(2.5rem, min(4.7vw, 7.5svh), 4.5rem);
+    }
+    .body-copy {
+      font-size: 0.96rem;
+      line-height: 1.55;
+    }
+    .body-copy p { margin-bottom: 14px; }
+    .intro-copy .body-copy { margin-top: 20px; }
+    .evidence-head,
+    .evidence-caption {
+      min-height: 38px;
+      padding-block: 7px;
+    }
+
+    .process-heading { padding-bottom: 18px; }
+    .process-step {
+      min-height: 190px;
+      padding-top: 40px;
+      padding-bottom: 18px;
+    }
+    .process-step h3 {
+      min-height: 2.2em;
+      margin: 18px 0 10px;
+      font-size: clamp(1.35rem, 1.8vw, 1.8rem);
+    }
+    .process-step p {
+      font-size: 0.82rem;
+      line-height: 1.45;
+    }
+
+    .claim-copy h2 {
+      font-size: clamp(2.5rem, min(3.7vw, 6.6svh), 4.3rem);
+    }
+    .claim-copy .body-copy { margin-top: 18px; }
+    .claim-note {
+      margin-top: 16px;
+      padding-top: 14px;
+      font-size: 0.78rem;
+    }
+    .verdict-item {
+      padding-block: 11px;
+    }
+    .verdict-number { font-size: clamp(1.9rem, 2.6vw, 2.8rem); }
+    .verdict-item h3 {
+      padding-bottom: 9px;
+      font-size: clamp(1rem, 1.45vw, 1.25rem);
+    }
+    .verdict-item p {
+      margin-top: 9px;
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+
+    .proof-header {
+      margin-bottom: 20px;
+    }
+    .proof-intro .body-copy {
+      margin-bottom: 14px;
+    }
+    .proof-tab { min-height: 44px; }
+    .proof-media { height: max(230px, 34svh); }
+    .proof-card-head,
+    .proof-card-caption {
+      min-height: 40px;
+      padding-block: 7px;
+    }
+
+    .install-header {
+      margin-bottom: 14px;
+    }
+    .install-row {
+      min-height: 68px;
+      padding-block: 7px;
+    }
+    .install-name h3 { font-size: 1.24rem; }
+    .install-name p { font-size: 0.78rem; }
+    .code-block {
+      padding: 8px 14px;
+      font-size: 0.72rem;
+      line-height: 1.4;
+    }
+  }
+
+  @media (max-width: 1100px) {
+    .hero { min-height: auto; }
+    .hero-grid { grid-template-columns: 1fr; }
+    .hero-copy { max-width: 680px; }
+    .hero-copy h1 { font-size: clamp(5rem, 13vw, 8rem); }
+    .decoder-window {
+      width: min(100%, 720px);
+      justify-self: start;
+    }
+    .intro-grid { grid-template-columns: 1fr; }
+    .intro-copy { max-width: 700px; }
+    .process-heading { grid-template-columns: 1fr; align-items: start; }
+    .claim-grid { grid-template-columns: 1fr; }
+    .claim-copy { max-width: 760px; }
+    .claim-copy h2 { max-width: 720px; }
+    .proof-header { grid-template-columns: 1fr; }
+    .proof-intro {
+      justify-self: start;
+      max-width: 700px;
+    }
+    .install-header { grid-template-columns: 1fr; }
+    .install-header .body-copy { justify-self: start; }
+    .install-row { grid-template-columns: 50px minmax(170px, 0.45fr) minmax(320px, 1.25fr) 76px; gap: 18px; }
+  }
+
+  @media (max-width: 760px) {
+    :root { --section: 84px; }
+    .nav-inner { min-height: 68px; }
+    .nav-links a:not(.nav-github) { display: none; }
+    .hero {
+      min-height: calc(100svh - 68px + 2in);
+      padding-block: 54px 72px;
+    }
+    .hero-grid { gap: 48px; }
+    .hero-copy h1 { font-size: clamp(4rem, 21vw, 6.6rem); }
+    .hero-rule { height: 5px; margin: 30px 0 22px; }
+    .hero-actions { flex-direction: column; }
+    .button { width: 100%; }
+    .decoder-bar { align-items: flex-start; flex-direction: column; padding-block: 13px; gap: 3px; }
+    .decoder-window {
+      width: 100%;
+      height: 518px;
+      grid-template-rows: auto minmax(0, 1fr) 47px 180px;
+    }
+    #scramble { font-size: clamp(1.65rem, 9vw, 2.65rem); }
+    .section-title { font-size: clamp(3.1rem, 16vw, 5rem); }
+    .evidence-grid { grid-template-columns: 1fr; }
+    .evidence-item + .evidence-item { border-left: 0; border-top: 1px solid var(--ink); }
+    .media-lightbox { width: fit-content; }
+    .lightbox-close { top: 8px; right: 8px; }
+    .process-rail { grid-template-columns: 1fr; }
+    .process-step {
+      min-height: auto;
+      padding: 44px 0 36px 42px !important;
+      border-right: 0 !important;
+      border-bottom: 1px solid var(--line);
+    }
+    .process-step::before {
+      left: 8px;
+      right: auto;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      height: auto;
+    }
+    .process-step::after { left: 1px; top: 46px; }
+    .process-step h3 { min-height: 0; margin-top: 18px; }
+    .claim .section { padding-block: 84px; }
+    .claim-grid { gap: 56px; }
+    .claim-copy h2 { font-size: clamp(3rem, 13vw, 4.8rem); }
+    .verdict-item { grid-template-columns: 58px 1fr; gap: 12px; }
+    .proof-header { gap: 32px; }
+    .proof-tabs { width: 100%; }
+    .proof-panel { grid-template-columns: 1fr; }
+    .proof-card + .proof-card {
+      border-left: 0;
+      border-top: 1px solid var(--ink);
+    }
+    .proof-media { height: min(620px, 112vw); }
+    .proof-image-button img {
+      object-fit: contain;
+      object-position: center;
+      transform: none;
+    }
+    .proof-image-button:hover img { transform: none; }
+    .proof-image-button::after {
+      right: 10px;
+      bottom: 10px;
+      padding: 8px 10px;
+    }
+    .install-row {
+      grid-template-columns: 34px minmax(0, 1fr) auto;
+      grid-template-areas:
+        "number name copy"
+        "code code code";
+      gap: 14px;
+      align-items: start;
+      padding-block: 28px;
+    }
+    .install-number {
+      grid-area: number;
+      padding-top: 5px;
+    }
+    .install-name {
+      grid-area: name;
+      min-width: 0;
+      padding-left: 16px;
+    }
+    .code-block {
+      grid-area: code;
+      width: 100%;
+      padding: 18px 16px;
+      overflow-wrap: anywhere;
+      font-size: 0.7rem;
+    }
+    .copy-button {
+      grid-area: copy;
+      align-self: start;
+      padding-top: 5px;
+    }
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+    .footer-wordmark { font-size: clamp(2.8rem, 15vw, 5.6rem); white-space: normal; line-height: 0.84; }
+    .footer-meta { flex-direction: column; gap: 6px; }
+  }
+
+  @media (max-width: 460px) {
+    .brand { font-size: 1.15rem; }
+    .brand-mark { width: 34px; height: 34px; border-radius: 8px; }
+    .nav-github span { display: none; }
+    .hero-copy h1 { font-size: 19vw; }
+    .decoder-bar,
+    .decoder-output-label,
+    .evidence-head,
+    .evidence-caption,
+    .proof-tab,
+    .proof-card-head,
+    .proof-card-caption { font-size: 0.63rem; }
+    .proof-card-head {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .verdict-item { grid-template-columns: 1fr; }
+    .install-row { grid-template-columns: 30px minmax(0, 1fr) auto; gap: 12px; }
+    .install-name { padding-left: 14px; }
+    .footer-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    .reveal { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-nav">
+  <div class="shell nav-inner">
+    <a class="brand" href="#top" aria-label="Decoy Font Decoder home">
+      <img class="brand-mark" src="assets/brand-icon.webp" alt="" width="40" height="40">
+      <span>Decoy Font Decoder</span>
+    </a>
+    <nav class="nav-links" aria-label="Primary navigation">
+      <a href="#what">What it is</a>
+      <a href="#how">How it breaks</a>
+      <a href="#claim">The claim</a>
+      <a href="#proof">Chat proof</a>
+      <a class="nav-github" href="https://github.com/haroontrailblazer/decoy-font-decoder">
+        <span>GitHub</span>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M7 17 17 7M8 7h9v9"/>
+        </svg>
+      </a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" id="top">
+    <div class="shell hero-grid">
+      <div class="hero-copy reveal">
+        <h1>Decoy<br>Font<br>Decoder</h1>
+        <div class="hero-rule" aria-hidden="true"></div>
+        <p class="hero-lede">
+          The sharp text is designed to fool the machine.
+          This plugin <strong>pulls the blurred truth out.</strong>
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#install">
+            Get the skill
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+          </a>
+          <a class="button button-secondary" href="https://github.com/haroontrailblazer/decoy-font-decoder">
+            View on GitHub
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M7 17 17 7M8 7h9v9"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="decoder-window reveal" aria-label="Decoy-font decoding demonstration">
+        <div class="decoder-bar">
+          <span>Input: one image, two frequency bands</span>
+          <span class="decoder-state">Decoding…</span>
+        </div>
+        <div class="noise-stage">
+          <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-slot="assets/paused-frame.webp" alt="">
+          <span class="scan-line" aria-hidden="true"></span>
+          <span class="progress-track" aria-hidden="true"></span>
+        </div>
+        <div class="decoder-output-label">Output: decoded message</div>
+        <div class="decoded-message">
+          <span id="scramble" aria-live="polite">TRUST THE BLUR</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="what">
+    <div class="shell intro-grid">
+      <div class="intro-copy reveal">
+        <p class="section-label">What it is</p>
+        <h2 class="section-title">What is a decoy font?</h2>
+        <div class="short-rule" aria-hidden="true"></div>
+        <div class="body-copy">
+          <p>
+            A decoy font writes two messages into one image at different scales.
+            Crisp thin outlines form the fake text, while broad blurred letters
+            carry the real text beneath them.
+          </p>
+          <p>
+            Squint or step back and the outlines lose their grip. The decoder
+            applies that same low-pass view, separates both layers, and returns
+            the exact hidden and decoy messages.
+          </p>
+        </div>
+      </div>
+
+      <figure class="evidence-frame reveal">
+        <div class="evidence-grid">
+          <div class="evidence-item">
+            <div class="evidence-head">Decoy-font image · original</div>
+            <div class="evidence-media">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-slot="assets/decoy-font-original.webp" alt="">
+            </div>
+            <figcaption class="evidence-caption">The sharp outlines are the decoy; the blurred letter mass carries the real message.</figcaption>
+          </div>
+          <div class="evidence-item evidence-item--agent">
+            <div class="evidence-head">Agent result · decoded in Codex</div>
+            <div class="evidence-media">
+              <button class="evidence-image-button" type="button" aria-label="Open the Codex decoding result in a large view" aria-haspopup="dialog"
+                      data-lightbox-src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-lightbox-slot="assets/agent-decoded-result.webp"
+                      data-lightbox-alt=""
+                      data-lightbox-label="Large view of the Codex decoding result">
+                <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-slot="assets/agent-decoded-result.webp" alt="">
+              </button>
+            </div>
+            <figcaption class="evidence-caption">Reserved for the final agent decode result and its two generated layers.</figcaption>
+          </div>
+        </div>
+      </figure>
+    </div>
+
+    <div class="shell process" id="how">
+      <div class="process-heading reveal">
+        <div>
+          <p class="section-label">Process</p>
+          <h2 class="section-title">How the decoder breaks it</h2>
+        </div>
+        <div class="body-copy">
+          <p>
+            The claim has one flaw: <strong>the messages occupy different frequency bands.</strong>
+            The decoder separates those bands in four stages—no model weights and no GPU.
+          </p>
+        </div>
+      </div>
+
+      <div class="process-rail reveal">
+        <article class="process-step">
+          <span class="step-number">01</span>
+          <h3>Invert the image</h3>
+          <p>Convert dark ink into bright signal.</p>
+        </article>
+        <article class="process-step">
+          <span class="step-number">02</span>
+          <h3>Low-pass the signal</h3>
+          <p>Apply a Gaussian blur until thin outline strokes disappear.</p>
+        </article>
+        <article class="process-step">
+          <span class="step-number">03</span>
+          <h3>Reveal the truth</h3>
+          <p>Boost the surviving hidden letter mass.</p>
+        </article>
+        <article class="process-step">
+          <span class="step-number">04</span>
+          <h3>Recover the decoy</h3>
+          <p>Subtract the blur to isolate the decoy.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="claim" id="claim">
+    <div class="shell section claim-grid">
+      <div class="claim-copy reveal">
+        <p class="section-label">The security claim, tested</p>
+        <h2>They claim it's AI-proof. This plugin breaks through it easily.</h2>
+        <div class="body-copy">
+          <p>
+            Hiding a message at another viewing scale is a classic image-processing
+            problem, not a security boundary. Gaussian filters and layer subtraction
+            are standard tools.
+          </p>
+          <p>
+            A protection that collapses to a few hundred lines of Python is a
+            visual novelty—not a defense.
+          </p>
+        </div>
+        <div class="claim-note">
+          <svg aria-hidden="true" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.7">
+            <path d="M5 27 27 5M10 5h17v17"/>
+          </svg>
+          <span>Obfuscation isn't encryption.<br>Change the scale, change the reading.</span>
+        </div>
+      </div>
+
+      <div class="verdict-list reveal">
+        <article class="verdict-item">
+          <div class="verdict-number">01</div>
+          <div>
+            <p class="verdict-kicker">Evidence 01</p>
+            <h3>The claim — “AI can't read this”</h3>
+            <p>Agents follow the crisp, high-contrast outlines and confidently return the planted fake text.</p>
+          </div>
+        </article>
+        <article class="verdict-item">
+          <div class="verdict-number">02</div>
+          <div>
+            <p class="verdict-kicker">Evidence 02</p>
+            <h3>The reality — AI can squint too</h3>
+            <p>The real message lives at low spatial frequency, so the decoder reads the image at that scale.</p>
+          </div>
+        </article>
+        <article class="verdict-item">
+          <div class="verdict-number">03</div>
+          <div>
+            <p class="verdict-kicker">Evidence 03</p>
+            <h3>The verdict — A visual effect</h3>
+            <p>Classic filtering reveals both layers reliably. Nothing cryptographic stays hidden.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section real-proof" id="proof" aria-labelledby="proof-title">
+    <div class="shell">
+      <div class="proof-header reveal">
+        <div class="proof-header-copy">
+          <p class="section-label">Chat proof</p>
+          <h2 class="section-title" id="proof-title">The same message. Two ways in.</h2>
+          <div class="short-rule" aria-hidden="true"></div>
+        </div>
+        <div class="proof-intro">
+          <div class="body-copy">
+            <p>
+              Four reserved captures will show Codex and Claude recovering
+              the same hidden text from one decoy-font image.
+            </p>
+          </div>
+          <div class="proof-tabs" role="tablist" aria-label="Choose proof method">
+            <button class="proof-tab" id="proof-tab-prompt" type="button" role="tab"
+                    aria-selected="true" aria-controls="proof-panel-prompt"
+                    data-proof-tab="prompt">Prompt · no install</button>
+            <button class="proof-tab" id="proof-tab-plugin" type="button" role="tab"
+                    aria-selected="false" aria-controls="proof-panel-plugin"
+                    tabindex="-1" data-proof-tab="plugin">Plugin / skill</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="proof-stage reveal">
+        <div class="proof-panel" id="proof-panel-prompt" role="tabpanel"
+             aria-labelledby="proof-tab-prompt" data-proof-panel="prompt">
+          <article class="proof-card">
+            <div class="proof-card-head">
+              <span>Codex · reusable prompt</span>
+              <span class="proof-outcome">Image pending</span>
+            </div>
+            <div class="proof-media">
+              <button class="proof-image-button" type="button"
+                      style="--proof-focus: 66%;"
+                      aria-label="Open the full Codex prompt proof screenshot"
+                      aria-haspopup="dialog"
+                      data-lightbox-src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-lightbox-slot="assets/proof/codex-prompt-proof.webp"
+                      data-lightbox-alt=""
+                      data-lightbox-label="Codex prompt proof">
+                <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-slot="assets/proof/codex-prompt-proof.webp"
+                     alt=""
+                     loading="lazy" width="1078" height="1917">
+              </button>
+            </div>
+            <p class="proof-card-caption">The decoder prompt is pasted directly into a regular Codex chat.</p>
+          </article>
+
+          <article class="proof-card">
+            <div class="proof-card-head">
+              <span>Claude · reusable prompt</span>
+              <span class="proof-outcome">Image pending</span>
+            </div>
+            <div class="proof-media">
+              <button class="proof-image-button" type="button"
+                      style="--proof-focus: 61%;"
+                      aria-label="Open the full Claude prompt proof screenshot"
+                      aria-haspopup="dialog"
+                      data-lightbox-src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-lightbox-slot="assets/proof/claude-prompt-proof.webp"
+                      data-lightbox-alt=""
+                      data-lightbox-label="Claude prompt proof">
+                <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-slot="assets/proof/claude-prompt-proof.webp"
+                     alt=""
+                     loading="lazy" width="1078" height="1846">
+              </button>
+            </div>
+            <p class="proof-card-caption">The same standalone prompt runs in Claude and returns the matching result.</p>
+          </article>
+        </div>
+
+        <div class="proof-panel" id="proof-panel-plugin" role="tabpanel"
+             aria-labelledby="proof-tab-plugin" data-proof-panel="plugin" hidden>
+          <article class="proof-card">
+            <div class="proof-card-head">
+              <span>Codex · installed plugin</span>
+              <span class="proof-outcome">Image pending</span>
+            </div>
+            <div class="proof-media">
+              <button class="proof-image-button" type="button"
+                      style="--proof-focus: 68%;"
+                      aria-label="Open the full Codex plugin proof screenshot"
+                      aria-haspopup="dialog"
+                      data-lightbox-src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-lightbox-slot="assets/proof/codex-plugin-proof.webp"
+                      data-lightbox-alt=""
+                      data-lightbox-label="Codex plugin proof">
+                <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-slot="assets/proof/codex-plugin-proof.webp"
+                     alt=""
+                     loading="lazy" width="1078" height="1917">
+              </button>
+            </div>
+            <p class="proof-card-caption">The installed Decoy Font Decoder plugin handles the full decode workflow.</p>
+          </article>
+
+          <article class="proof-card">
+            <div class="proof-card-head">
+              <span>Claude · installed skill</span>
+              <span class="proof-outcome">Image pending</span>
+            </div>
+            <div class="proof-media">
+              <button class="proof-image-button" type="button"
+                      style="--proof-focus: 50%;"
+                      aria-label="Open the full Claude skill proof screenshot"
+                      aria-haspopup="dialog"
+                      data-lightbox-src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-lightbox-slot="assets/proof/claude-plugin-proof.webp"
+                      data-lightbox-alt=""
+                      data-lightbox-label="Claude skill proof">
+                <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-slot="assets/proof/claude-plugin-proof.webp"
+                     alt=""
+                     loading="lazy" width="1078" height="1825">
+              </button>
+            </div>
+            <p class="proof-card-caption">The installed <code>/decoy-decode</code> skill returns the same message in Claude.</p>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="install">
+    <div class="shell">
+      <div class="install-header reveal">
+        <div>
+          <p class="section-label">Install</p>
+          <h2 class="section-title">Give your agent the skill.</h2>
+        </div>
+        <div class="body-copy">
+          <p>One repository, two agent plugins, a plain Python CLI, and a reusable chat prompt.</p>
+        </div>
+      </div>
+
+      <div class="install-ledger reveal">
+        <article class="install-row">
+          <span class="install-number">01</span>
+          <div class="install-name">
+            <h3>Claude Code</h3>
+            <p>Install from the plugin marketplace.</p>
+          </div>
+          <pre class="code-block" id="code-claude">/plugin marketplace add haroontrailblazer/decoy-font-decoder
+/plugin install decoy-font-decoder@decoy-font-tools</pre>
+          <button class="copy-button" type="button" data-copy="code-claude" aria-label="Copy Claude Code install commands">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="8" y="8" width="11" height="12"/><path d="M16 8V4H5v12h3"/>
+            </svg>
+            <span>Copy</span>
+          </button>
+        </article>
+
+        <article class="install-row">
+          <span class="install-number">02</span>
+          <div class="install-name">
+            <h3>Codex</h3>
+            <p>Install the plugin, then start a new task.</p>
+          </div>
+          <pre class="code-block" id="code-codex">Use <span class="code-accent">$decoy-decode</span> to tell me what decoy-image.png really says.</pre>
+          <button class="copy-button" type="button" data-copy="code-codex" aria-label="Copy Codex prompt">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="8" y="8" width="11" height="12"/><path d="M16 8V4H5v12h3"/>
+            </svg>
+            <span>Copy</span>
+          </button>
+        </article>
+
+        <article class="install-row">
+          <span class="install-number">03</span>
+          <div class="install-name">
+            <h3>Plain Python</h3>
+            <p>Run the decoder without an agent.</p>
+          </div>
+          <pre class="code-block" id="code-python">pip install -r requirements.txt
+python decode.py decoy-font-message.png</pre>
+          <button class="copy-button" type="button" data-copy="code-python" aria-label="Copy Python commands">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="8" y="8" width="11" height="12"/><path d="M16 8V4H5v12h3"/>
+            </svg>
+            <span>Copy</span>
+          </button>
+        </article>
+
+        <article class="install-row">
+          <span class="install-number">04</span>
+          <div class="install-name">
+            <h3>Any chat — no install</h3>
+            <p>Paste the decoder prompt and attach an image. The same two-layer
+              workflow runs without installing the packaged plugin.</p>
+          </div>
+          <pre class="code-block" id="code-chat">Open <a class="code-accent code-file-link"
+             href="https://github.com/haroontrailblazer/decoy-font-decoder/blob/main/prompts/decode-in-chat.md"
+             data-text-viewer="https://raw.githubusercontent.com/haroontrailblazer/decoy-font-decoder/main/prompts/decode-in-chat.md"
+             data-viewer-title="prompts/decode-in-chat.md"
+             data-viewer-language="markdown"
+             data-viewer-label="Markdown prompt"
+             data-viewer-default-mode="preview"
+             data-viewer-copy-after-heading="## Prompt to paste"
+             data-viewer-aria-label="Decoder chat prompt source">prompts/decode-in-chat.md</a>
+Paste it into Claude or Codex.</pre>
+          <button class="copy-button" type="button"
+                  data-copy="code-chat"
+                  data-copy-url="https://raw.githubusercontent.com/haroontrailblazer/decoy-font-decoder/main/prompts/decode-in-chat.md"
+                  data-copy-after-heading="## Prompt to paste"
+                  aria-label="Copy reusable chat prompt">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="8" y="8" width="11" height="12"/><path d="M16 8V4H5v12h3"/>
+            </svg>
+            <span>Copy</span>
+          </button>
+        </article>
+      </div>
+    </div>
+  </section>
+</main>
+
+<dialog class="media-lightbox" id="agent-result-lightbox" aria-label="Large proof image">
+  <div class="lightbox-frame">
+  <button class="lightbox-close" type="button" aria-label="Close large image">×</button>
+    <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" data-slot="assets/agent-decoded-result.webp" alt="">
+  </div>
+</dialog>
+
+<footer class="site-footer">
+  <div class="shell">
+    <div class="footer-grid">
+      <div class="footer-group">
+        <h2>Decoder</h2>
+        <a href="#what">What it is</a>
+        <a href="#how">How it breaks</a>
+        <a href="#claim">The security claim</a>
+        <a href="#proof">Chat proof</a>
+        <a href="#install">Install</a>
+      </div>
+      <div class="footer-group">
+        <h2>Plugins</h2>
+        <a href="https://github.com/haroontrailblazer/decoy-font-decoder"
+           data-repo-viewer="https://api.github.com/repos/haroontrailblazer/decoy-font-decoder/git/trees/main?recursive=1"
+           data-readme-viewer="https://raw.githubusercontent.com/haroontrailblazer/decoy-font-decoder/main/README.md"
+           data-repo-roots=".claude-plugin,claude-skills,commands"
+           data-repo-initial-file=".claude-plugin/plugin.json"
+           data-repo-initial-file-viewer="https://raw.githubusercontent.com/haroontrailblazer/decoy-font-decoder/main/.claude-plugin/plugin.json"
+           data-viewer-title="Claude Code plugin">Claude Code</a>
+        <a href="https://github.com/haroontrailblazer/decoy-font-decoder"
+           data-repo-viewer="https://api.github.com/repos/haroontrailblazer/decoy-font-decoder/git/trees/main?recursive=1"
+           data-readme-viewer="https://raw.githubusercontent.com/haroontrailblazer/decoy-font-decoder/main/README.md"
+           data-repo-roots=".codex-plugin,codex-skills"
+           data-repo-initial-file=".codex-plugin/plugin.json"
+           data-repo-initial-file-viewer="https://raw.githubusercontent.com/haroontrailblazer/decoy-font-decoder/main/.codex-plugin/plugin.json"
+           data-viewer-title="Codex plugin">Codex</a>
+        <a href="https://github.com/haroontrailblazer/decoy-font-decoder/blob/main/decode.py" data-code-viewer="https://raw.githubusercontent.com/haroontrailblazer/decoy-font-decoder/main/decode.py">Python CLI</a>
+        <a href="https://github.com/haroontrailblazer/decoy-font-decoder/blob/main/prompts/decode-in-chat.md"
+           data-text-viewer="https://raw.githubusercontent.com/haroontrailblazer/decoy-font-decoder/main/prompts/decode-in-chat.md"
+           data-viewer-title="prompts/decode-in-chat.md"
+           data-viewer-language="markdown"
+           data-viewer-label="Markdown prompt"
+           data-viewer-default-mode="preview"
+           data-viewer-copy-after-heading="## Prompt to paste"
+           data-viewer-aria-label="Decoder chat prompt source">Chat prompt</a>
+      </div>
+      <div class="footer-group">
+        <h2>Project</h2>
+        <a href="https://github.com/haroontrailblazer/decoy-font-decoder" data-repo-viewer="https://api.github.com/repos/haroontrailblazer/decoy-font-decoder/git/trees/main?recursive=1" data-readme-viewer="https://raw.githubusercontent.com/haroontrailblazer/decoy-font-decoder/main/README.md">Source</a>
+        <a href="docs.html">Documentation</a>
+        <a href="https://github.com/haroontrailblazer/decoy-font-decoder/blob/main/LICENSE" data-text-viewer="https://raw.githubusercontent.com/haroontrailblazer/decoy-font-decoder/main/LICENSE" data-viewer-title="LICENSE">MIT License</a>
+      </div>
+      <div class="footer-group">
+        <h2>Author</h2>
+        <a href="https://haroon.pro">Haroon K M</a>
+        <a href="https://github.com/haroontrailblazer">@haroontrailblazer</a>
+      </div>
+    </div>
+
+    <p class="footer-wordmark" aria-label="Trust the blur">TRUST THE BLUR</p>
+    <div class="footer-meta">
+      <span>© 2026 Haroon K M · MIT License</span>
+      <span>Open-source computer vision for frequency-hidden text.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="code-viewer.js"></script>
+<script>
+(() => {
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const scramble = document.getElementById("scramble");
+  const resultLightbox = document.getElementById("agent-result-lightbox");
+  const resultLightboxImage = resultLightbox?.querySelector("img");
+  const lightboxClose = resultLightbox?.querySelector(".lightbox-close");
+  const proofTabs = Array.from(document.querySelectorAll("[data-proof-tab]"));
+  const proofPanels = Array.from(document.querySelectorAll("[data-proof-panel]"));
+  const phrases = [
+    "TRUST THE BLUR",
+    "THE SHARP TEXT IS THE TRAP",
+    "YOUR AGENT CAN SQUINT TOO",
+    "READ THE HIDDEN LAYER"
+  ];
+  const glyphs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&*/<>{}=+";
+
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const randomGlyph = () => glyphs[Math.floor(Math.random() * glyphs.length)];
+
+  document.querySelectorAll("[data-lightbox-src]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      if (!resultLightbox || !resultLightboxImage) return;
+      resultLightboxImage.src = button.dataset.lightboxSrc;
+      resultLightboxImage.alt = button.dataset.lightboxAlt || "";
+      resultLightbox.setAttribute("aria-label", button.dataset.lightboxLabel || "Large proof image");
+      try {
+        await resultLightboxImage.decode();
+      } catch {
+        // The dialog can still display the browser's loaded image fallback.
+      }
+      resultLightbox.showModal();
+    });
+  });
+  lightboxClose?.addEventListener("click", () => resultLightbox?.close());
+  resultLightbox?.addEventListener("click", (event) => {
+    if (event.target === resultLightbox) resultLightbox.close();
+  });
+
+  const selectProofTab = (selectedTab) => {
+    const selectedPanel = selectedTab.dataset.proofTab;
+    proofTabs.forEach((tab) => {
+      const isSelected = tab === selectedTab;
+      tab.setAttribute("aria-selected", String(isSelected));
+      tab.tabIndex = isSelected ? 0 : -1;
+    });
+    proofPanels.forEach((panel) => {
+      panel.hidden = panel.dataset.proofPanel !== selectedPanel;
+    });
+
+    const proofSection = document.getElementById("proof");
+    const siteNav = document.querySelector(".site-nav");
+    if (proofSection && location.hash === "#proof") {
+      const navHeight = siteNav?.offsetHeight || 0;
+      if (proofSection.getBoundingClientRect().top >= navHeight - 2) {
+        requestAnimationFrame(() => {
+          window.scrollTo({
+            top: Math.max(0, proofSection.offsetTop - navHeight),
+            behavior: "instant"
+          });
+        });
+      }
+    }
+  };
+
+  proofTabs.forEach((tab, index) => {
+    tab.addEventListener("click", () => selectProofTab(tab));
+    tab.addEventListener("keydown", (event) => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      event.preventDefault();
+      const direction = event.key === "ArrowRight" ? 1 : -1;
+      const nextTab = proofTabs[(index + direction + proofTabs.length) % proofTabs.length];
+      selectProofTab(nextTab);
+      nextTab.focus();
+    });
+  });
+
+  async function scrambleTo(text) {
+    const length = Math.max(scramble.textContent.length, text.length);
+    const queue = Array.from({ length }, (_, index) => ({
+      target: text[index] || "",
+      start: Math.floor(Math.random() * 18),
+      end: 18 + Math.floor(Math.random() * 26)
+    }));
+
+    for (let frame = 0; frame <= 46; frame += 1) {
+      scramble.innerHTML = queue.map((item) => {
+        if (frame >= item.end) return item.target;
+        if (item.target === " ") return " ";
+        return `<span class="ghost">${randomGlyph()}</span>`;
+      }).join("");
+      await new Promise(requestAnimationFrame);
+    }
+    scramble.textContent = text;
+  }
+
+  async function runScramble() {
+    if (!scramble || reduceMotion) return;
+    let index = 0;
+    await wait(1200);
+    while (true) {
+      index = (index + 1) % phrases.length;
+      await scrambleTo(phrases[index]);
+      await wait(1800);
+    }
+  }
+
+  document.querySelectorAll(".copy-button").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const target = document.getElementById(button.dataset.copy);
+      const label = button.querySelector("span");
+      if (!target || !label) return;
+
+      try {
+        let copyText = target.innerText.trim();
+        if (button.dataset.copyUrl) {
+          const response = await fetch(button.dataset.copyUrl);
+          if (!response.ok) throw new Error(`Prompt request failed (${response.status})`);
+          copyText = (await response.text()).replace(/\r\n/g, "\n");
+
+          const heading = button.dataset.copyAfterHeading;
+          if (heading) {
+            const lines = copyText.split("\n");
+            const headingIndex = lines.findIndex((line) => line.trim() === heading);
+            if (headingIndex === -1) throw new Error("Prompt heading not found");
+            copyText = lines.slice(headingIndex + 1).join("\n").trim();
+          }
+        }
+
+        try {
+          await navigator.clipboard.writeText(copyText);
+        } catch {
+          const textarea = document.createElement("textarea");
+          textarea.value = copyText;
+          textarea.setAttribute("readonly", "");
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.append(textarea);
+          textarea.select();
+          const copied = typeof document.execCommand === "function" && document.execCommand("copy");
+          textarea.remove();
+          if (!copied) throw new Error("Clipboard unavailable");
+        }
+        label.textContent = "Copied";
+      } catch {
+        label.textContent = "Copy failed";
+      }
+
+      window.setTimeout(() => { label.textContent = "Copy"; }, 1800);
+    });
+  });
+
+  if (!reduceMotion && "IntersectionObserver" in window) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll(".reveal").forEach((element) => observer.observe(element));
+  } else {
+    document.querySelectorAll(".reveal").forEach((element) => element.classList.add("is-visible"));
+  }
+
+  runScramble();
+})();
+</script>
+</body>
+</html>
