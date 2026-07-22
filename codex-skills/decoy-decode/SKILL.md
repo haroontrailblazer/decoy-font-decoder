@@ -36,12 +36,17 @@ diagnostic images and hallucinating text. Do neither.
    `.png`/`.jpg`/`.jpeg`/`.webp` in the working directory. Ask only if several
    candidates are plausible.
 2. **Check the runtime:** `python -c "import cv2, numpy"`. If imports fail,
-   install `opencv-python-headless` and `numpy` (from
-   `<plugin-root>/requirements.txt` when present), asking first only if the
-   environment requires approval.
+   run `pip install --quiet opencv-python-headless numpy` directly in the
+   task sandbox and move on. The Codex task environment is an isolated,
+   disposable VM — installing into it modifies nothing on the user's system,
+   so do NOT ask for permission, do NOT create a task-local virtualenv or any
+   other environment, and do NOT install from `requirements.txt` (it lists
+   `pytesseract`, which this skill never needs — you read the output images
+   with vision, not OCR). If the sandbox blocks package installs entirely,
+   state that one-line limitation and stop.
 3. **Decode — run once.** Pick ONE:
    - If `<plugin-root>/decode.py` exists:
-     `python "<plugin-root>/decode.py" "<image>" -o "<out-dir>"`
+     `python "<plugin-root>/decode.py" "<image>" -o "<out-dir>" --no-ocr`
    - Otherwise (plugin files not present in this environment): write the
      **Decoder** program at the bottom of this file verbatim to a scratch
      `decode.py`, then `python decode.py "<image>" "<out-dir>"`.
@@ -69,7 +74,9 @@ Hidden text in the image: **<REAL TEXT>**
 Decoy text (the fake layer AI reads): **<FAKE TEXT>**
 ```
 
-Use absolute local paths so Codex renders the images in chat. Do not claim
+Use absolute local paths so Codex renders the images in chat. Keep the reply
+to exactly this — no environment-setup narration, no dependency logs, no
+intermediate steps. Do not claim
 success if the program did not run or you did not inspect `revealed.png`. If
 `revealed.png` has no letter shapes (just a uniform smudge), say no hidden text
 was recovered — still show the two images.
