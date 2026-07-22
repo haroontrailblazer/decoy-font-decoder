@@ -1,6 +1,6 @@
 {
   "name": "decoy-font-decoder",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Run a decoder for decoy-font images, show the revealed output image, and state both the hidden and the decoy text in chat.",
   "author": {
     "name": "Haroon K M",

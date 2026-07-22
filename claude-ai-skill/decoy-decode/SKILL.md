@@ -12,7 +12,7 @@ A decoy-font image packs two messages into the same glyphs: a sharp thin-outline
 1. Write the program in **Decoder** (below) to `decode.py`, then run it once on the attached image:
 
    ```bash
-   pip install --quiet opencv-python-headless numpy
+   pip install --quiet "opencv-python-headless<5" numpy
    python decode.py "<image-path>" out
    ```
 

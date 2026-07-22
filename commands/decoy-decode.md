@@ -16,7 +16,8 @@ is more than one plausible candidate.
 
 Then, without further prompting:
 
-1. Check deps: `python -c "import cv2, numpy"`. If it fails, run
+1. Check deps: `python -c "import cv2, numpy; cv2.imread"` (also catches a
+   broken OpenCV whose `cv2` imports but has no functions). If it fails, run
    `pip install -r "${CLAUDE_PLUGIN_ROOT}/requirements.txt"`.
 2. Run the decoder (it writes `revealed.png` and `decoy.png`):
 

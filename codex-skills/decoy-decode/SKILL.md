@@ -35,9 +35,15 @@ diagnostic images and hallucinating text. Do neither.
 1. **Resolve the image** from the user's request, or the most recently modified
    `.png`/`.jpg`/`.jpeg`/`.webp` in the working directory. Ask only if several
    candidates are plausible.
-2. **Check the runtime:** `python -c "import cv2, numpy"`. If imports fail,
-   run `pip install --quiet opencv-python-headless numpy` directly in the
-   task sandbox and move on. The Codex task environment is an isolated,
+2. **Check the runtime:** `python -c "import cv2, numpy; cv2.imread"` (this
+   also catches a broken OpenCV install whose `cv2` imports but has no
+   functions). If it fails, run
+   `pip install --quiet "opencv-python-headless<5" numpy` directly in the
+   task sandbox — OpenCV must stay on 4.x; the 5.x wheels can import an
+   incomplete `cv2` namespace. If the check still fails after installing (a
+   pre-existing broken OpenCV), run
+   `pip install --quiet --force-reinstall "opencv-python-headless<5"` once,
+   re-check, and move on. The Codex task environment is an isolated,
    disposable VM — installing into it modifies nothing on the user's system,
    so do NOT ask for permission, do NOT create a task-local virtualenv or any
    other environment, and do NOT install from `requirements.txt` (it lists

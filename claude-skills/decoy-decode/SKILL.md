@@ -36,9 +36,11 @@ over-processing — spawning diagnostic images and hallucinating text. Do neithe
 1. **Resolve the image path** from `$ARGUMENTS`, the user's request, or the
    most recently modified image (`.png`, `.jpg`, `.jpeg`, `.webp`) in the
    working directory. Ask only if several candidates are plausible.
-2. **Check dependencies:** `python -c "import cv2, numpy"`. If that fails,
-   `pip install -r "${CLAUDE_PLUGIN_ROOT}/requirements.txt"` (or
-   `pip install opencv-python-headless numpy`).
+2. **Check dependencies:** `python -c "import cv2, numpy; cv2.imread"` (also
+   catches a broken OpenCV whose `cv2` imports but has no functions). If that
+   fails, `pip install -r "${CLAUDE_PLUGIN_ROOT}/requirements.txt"` (or
+   `pip install "opencv-python-headless<5" numpy`). OpenCV must stay on 4.x —
+   the 5.x wheels can ship an incomplete `cv2` namespace.
 3. **Decode — run once.** Pick ONE:
    - If `${CLAUDE_PLUGIN_ROOT}/decode.py` exists:
      `python "${CLAUDE_PLUGIN_ROOT}/decode.py" "<image>" -o "<out-dir>"`
