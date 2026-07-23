@@ -28,16 +28,16 @@ Then, without further prompting:
    `${CLAUDE_PLUGIN_ROOT}` is the plugin's install directory. On Windows
    PowerShell it is `$env:CLAUDE_PLUGIN_ROOT`; if it expands empty, substitute
    the install path literally.
-3. Open `revealed.png` exactly once with the image/vision tool. On claude.ai,
-   use the computer `view` tool and wait until it returns the actual pixels.
-   Do not open or read `decoy.png`; it is only an output file to present.
-4. Immediately copy only the letters visibly present in `revealed.png`:
+3. If running on claude.ai (`/mnt/user-data` paths, or an empty plugin root
+   with the skill under `/mnt/skills/plugins/`), do not call `view`, OCR, or
+   transcribe the generated image. Present only `revealed.png` and reply:
 
    ```
-   Text in revealed.png: **<LITERAL VISUAL TRANSCRIPTION>**
+   Attach revealed.png in your next message and ask: What text is in this image?
    ```
 
-Do not count letters or words, match word lengths, generate candidate phrases,
-compare image layers, infer from meaning, or perform a confirmation pass. If a
-glyph cannot be read in the single view, write `[unclear]` in that position.
-Never fill a gap with a plausible word.
+4. If running in Claude Code, open `revealed.png` once with the local image
+   reader and return `Text in revealed.png: **<LITERAL TRANSCRIPTION>**`.
+
+Never inspect `decoy.png`. On claude.ai, never guess the text from the
+generated-file preview; the fresh user attachment is the required second step.

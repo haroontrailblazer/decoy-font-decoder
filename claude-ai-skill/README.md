@@ -30,32 +30,31 @@ This writes `claude-ai-skill/decoy-decode.zip` containing only
 
    > What does this image really say?
 
-Claude loads the `decoy-decode` skill, runs the bundled decoder, views
-`revealed.png` once, and literally transcribes only the letters visible there.
+Claude loads the `decoy-decode` skill, runs the bundled decoder, and returns
+`revealed.png`. Attach that output in your next message and ask, `What text is
+in this image?`
 
 After replacing an older copy of this skill, start a **new chat** so the old
 instructions are not retained in the conversation. During a successful run,
-Claude's activity should show one `view` operation for `revealed.png` after
-the decoder finishes, followed immediately by the transcription. It should
-not inspect `decoy.png`, count word lengths, construct candidate sentences,
-or run a confirmation pass.
+Claude should not run `view`, OCR, or a same-turn transcription after the
+decoder finishes. A fresh image attachment is required because claude.ai does
+not feed a generated-file preview back as a new uploaded-image input.
 
 ## What's inside
 
 - `decoy-decode/SKILL.md` — self-contained: the instructions **and** the decoder
   (invert → heavy Gaussian low-pass → contrast/gamma stretch for the hidden
   layer, plus the high-pass remainder for the decoy layer). Claude writes the
-  decoder to a file, runs it once, and reads both messages from the two images.
-  No separate files needed.
+  decoder to a file, runs it once, and returns `revealed.png` for a fresh image
+  attachment. No separate files are needed inside the skill package.
 
 ## Notes
 
 - The sandbox installs `opencv-python-headless` and `numpy` automatically.
 - The skill runs once and produces exactly two files (`revealed.png` and
-  `decoy.png`), but uses only `revealed.png` for transcription.
-- The claude.ai workflow explicitly opens `revealed.png` once with the
-  computer `view` tool. It forbids decoy comparison, word/letter counting,
-  candidate-phrase generation, and repeated confirmation reads.
+  `decoy.png`), then presents only `revealed.png`.
+- Transcription happens only after the user attaches `revealed.png` as a fresh
+  image in the next message.
 - Same decoder ships as a `/decoy-decode` command + skill for **Claude Code**
   and a `$decoy-decode` skill for **Codex**. See the repository root README.
 

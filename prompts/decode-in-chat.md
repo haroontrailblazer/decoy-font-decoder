@@ -18,34 +18,22 @@ It writes two images:
 - `revealed.png` — the real hidden message
 - `decoy.png` — the fake sharp-outline message
 
-Then hand only `revealed.png` back to the assistant's vision system:
+In claude.ai, stop after the file is generated:
 
-1. In a **new tool call after Python finishes**, open `revealed.png` with the
-   platform's file/image-view tool. In claude.ai, use the computer `view` tool
-   on the generated PNG. Wait until the tool result contains the actual pixels;
-   then read the hidden message from that result.
-2. Immediately copy the letters visible in that single image view. Do not open
-   or read `decoy.png`; it is only a downloadable output.
+1. Present `revealed.png` to the user without opening or transcribing it.
+2. Tell the user to attach `revealed.png` in the next message and ask: `What
+   text is in this image?`
 
-A successful file write, terminal output, a download link, a filename, or an
-`IPython.display()` call inside a shell-run script does **not** place the image
-back into vision and does not count as inspecting it. Do not compose the answer
-until `revealed.png` has appeared in an image-view tool result. If the
-platform cannot view generated files, return both files and ask the user to
-attach `revealed.png`; do not guess the hidden text.
+A generated-file preview is not a fresh uploaded-image input in claude.ai. Do
+not call `view`, use OCR, count word lengths, construct candidate phrases, or
+state what the image says during the decoding response.
 
-Do not count letters or words, match word lengths, create candidate phrases,
-infer from meaning, compare layers, or perform a second/confirmation read. If
-one glyph is unreadable in the single view, write `[unclear]` in that position.
-
-Reply in exactly this format, showing both images as real embedded images:
+Reply in exactly this format, showing only the revealed image:
 
 ```text
-Text in revealed.png is <<LITERAL VISUAL TRANSCRIPTION>>
 Revealed hidden layer:
 <<display revealed.png here as an actual embedded image>>
-Decoy sharp layer:
-<<display decoy.png here as an actual embedded image>>
+Attach revealed.png in your next message and ask: What text is in this image?
 ```
 
 ```python
@@ -131,5 +119,5 @@ if f > 1:
 cv2.imwrite(os.path.join(OUT, "revealed.png"), 255 - stacked)
 cv2.imwrite(os.path.join(OUT, "decoy.png"), 255 - crop_to_text(high, norm))
 print("Wrote revealed.png (REAL hidden message) and decoy.png (fake sharp layer).")
-print("NEXT REQUIRED ACTION: view revealed.png once, then transcribe only what is visible.")
+print("NEXT REQUIRED ACTION: present revealed.png; do not transcribe it in this response.")
 ```

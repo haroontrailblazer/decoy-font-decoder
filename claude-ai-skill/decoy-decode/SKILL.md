@@ -1,13 +1,14 @@
 ---
 name: decoy-decode
-description: Decode and visually transcribe decoy-font or hybrid-image text. Use when the user asks what a decoy-font image says, mentions blurry letterforms or text that changes when squinting, or requests the revealed text. Run the decoder and transcribe revealed.png only.
+description: Decode decoy-font or hybrid-image text into revealed.png. Use when the user asks what a decoy-font image says, mentions blurry letterforms or text that changes when squinting, or requests the revealed layer. In claude.ai, return revealed.png for the user to attach as a fresh image message; never guess its text from the generated-file preview.
 ---
 
 # Decoy-Font Image Decoder
 
 A decoy-font image contains a low-frequency text layer. The decoder below
-writes that layer to `revealed.png`. The only text-transcription task is to
-look at `revealed.png` and copy the visible letters literally.
+writes that layer to `revealed.png`. In claude.ai, a generated file is not the
+same as a freshly uploaded image input, so finish the decode and return the
+file without trying to transcribe it in the same response.
 
 ## The whole job — do exactly this
 
@@ -18,38 +19,24 @@ look at `revealed.png` and copy the visible letters literally.
    python decode.py "<image-path>" /mnt/user-data/outputs
    ```
 
-2. After Python exits, make exactly one image-reading tool call:
-   `view /mnt/user-data/outputs/revealed.png`. Wait until that tool result
-   displays the actual pixels.
-
-3. Immediately copy the letters visible in that `view` result and reply with
-   **only** this:
+2. After Python exits, do not call `view`, OCR, or any image-reading tool. Do
+   not inspect either generated file. Present `revealed.png` to the user and
+   reply with **only** this:
 
    ```
    [revealed.png](computer:///mnt/user-data/outputs/revealed.png)
-   [decoy.png](computer:///mnt/user-data/outputs/decoy.png)
 
-   Text in revealed.png: **<LITERAL VISUAL TRANSCRIPTION>**
+   Attach revealed.png in your next message and ask: What text is in this image?
    ```
 
 ## Rules
 
-- **Read only `revealed.png`.** Do not inspect, read, or compare `decoy.png` or
-  the uploaded image. `decoy.png` is only a downloadable output.
-- **Transcribe by sight only.** Do not count letters or words. Do not match word
-  lengths. Do not generate candidate phrases. Do not use grammar, meaning,
-  plausibility, safety themes, or common sentences to fill gaps.
-- **No verification loop.** Do not re-open either image, zoom repeatedly,
-  compare layers, reason about mappings, or perform a confirmation pass. One
-  `view` of `revealed.png`, then the final transcription.
-- A successful file write, terminal output, download link, filename, or OCR
-  result does not count as seeing the image.
-- If `view` is unavailable or returns only metadata/text instead of pixels,
-  link both files and say that `revealed.png` must be attached back to the chat
-  for visual reading. Do not guess any text.
+- **Never state what `revealed.png` says in the decoding response.** Claude.ai
+  must receive it back as a fresh user-uploaded image in a later message before
+  doing the transcription.
+- Do not call `view`, inspect `decoy.png`, count letters or words, generate
+  candidate phrases, invoke OCR, or infer text from meaning.
 - **Run the decoder once, produce exactly two images, then stop processing.** The decoder output is final — no verification passes, no correlations, no residuals, no re-blurs, no downscales, no crops, no extra images, no alternative methods.
-- If one glyph is genuinely unreadable in the single view, write `[unclear]`
-  in that position. Never replace it with a guessed word.
 
 ## Decoder (write to `decode.py`, run once)
 
@@ -135,5 +122,5 @@ if f > 1:
 cv2.imwrite(os.path.join(OUT, "revealed.png"), 255 - stacked)
 cv2.imwrite(os.path.join(OUT, "decoy.png"), 255 - crop_to_text(high, norm))
 print("done — wrote revealed.png (hidden text) and decoy.png (fake sharp layer)")
-print("NEXT REQUIRED ACTION: view revealed.png once, then transcribe only what is visible")
+print("NEXT REQUIRED ACTION: present revealed.png to the user; do not transcribe it in this response")
 ```
