@@ -8,33 +8,33 @@
 <title>Decoy Font Decoder — the sharp text is the trap</title>
 <meta name="description" content="Decoy Font Decoder separates the real blurred message from the sharp fake outlines in decoy-font images.">
 <meta name="robots" content="index, follow, max-image-preview:large">
-<link rel="canonical" href="https://decoy-font-decoder.vercel.app/">
+<link rel="canonical" href="https://decoyfont-decoder.vercel.app/">
 <link rel="icon" href="assets/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="assets/brand-icon.webp">
-<link rel="image_src" href="https://decoy-font-decoder.vercel.app/assets/og-image-v4.webp">
+<link rel="image_src" href="https://decoyfont-decoder.vercel.app/assets/og-image-v5.png">
 <meta itemprop="name" content="Decoy Font Decoder">
 <meta itemprop="description" content="The sharp text is the trap. The message is the blur.">
-<meta itemprop="image" content="https://decoy-font-decoder.vercel.app/assets/og-image-v4.webp">
+<meta itemprop="image" content="https://decoyfont-decoder.vercel.app/assets/og-image-v5.png">
 <meta property="og:title" content="Decoy Font Decoder">
 <meta property="og:description" content="The sharp text is the trap. The message is the blur.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://decoy-font-decoder.vercel.app/">
+<meta property="og:url" content="https://decoyfont-decoder.vercel.app/">
 <link rel="stylesheet" href="code-viewer.css">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://decoy-font-decoder.vercel.app/assets/og-image-v4.webp">
-<meta property="og:image:url" content="https://decoy-font-decoder.vercel.app/assets/og-image-v4.webp">
-<meta property="og:image:secure_url" content="https://decoy-font-decoder.vercel.app/assets/og-image-v4.webp">
-<meta property="og:image:type" content="image/webp">
+<meta property="og:image" content="https://decoyfont-decoder.vercel.app/assets/og-image-v5.png">
+<meta property="og:image:url" content="https://decoyfont-decoder.vercel.app/assets/og-image-v5.png">
+<meta property="og:image:secure_url" content="https://decoyfont-decoder.vercel.app/assets/og-image-v5.png">
+<meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Decoy Font Decoder — the message is in the blur">
 <meta property="og:site_name" content="Decoy Font Decoder">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:domain" content="decoy-font-decoder.vercel.app">
-<meta name="twitter:url" content="https://decoy-font-decoder.vercel.app/">
+<meta name="twitter:domain" content="decoyfont-decoder.vercel.app">
+<meta name="twitter:url" content="https://decoyfont-decoder.vercel.app/">
 <meta name="twitter:title" content="Decoy Font Decoder">
 <meta name="twitter:description" content="The sharp text is the trap. The message is the blur.">
-<meta name="twitter:image" content="https://decoy-font-decoder.vercel.app/assets/og-image-v4.webp">
+<meta name="twitter:image" content="https://decoyfont-decoder.vercel.app/assets/og-image-v5.png">
 <meta name="twitter:image:alt" content="Decoy Font Decoder — the message is in the blur">
 <style>
   :root {
@@ -440,7 +440,7 @@
     object-fit: cover;
   }
   .evidence-item--agent .evidence-media img {
-    object-fit: contain;
+    object-fit: cover;
     filter: contrast(1.04);
   }
   .evidence-image-button {
@@ -711,6 +711,14 @@
   .proof-panel {
     display: grid;
     grid-template-columns: 1fr 1fr;
+  }
+  @supports (grid-template-rows: subgrid) {
+    .proof-panel { grid-template-rows: auto auto auto; }
+    .proof-card {
+      display: grid;
+      grid-row: span 3;
+      grid-template-rows: subgrid;
+    }
   }
   .proof-panel[hidden] { display: none; }
   .proof-card { min-width: 0; }
@@ -1217,8 +1225,6 @@
     }
     .proof-media { height: min(620px, 112vw); }
     .proof-image-button img {
-      object-fit: contain;
-      object-position: center;
       transform: none;
     }
     .proof-image-button:hover img { transform: none; }

@@ -8,19 +8,34 @@
 <title>Technical Documentation — Decoy Font Decoder</title>
 <meta name="description" content="Technical documentation for Decoy Font Decoder: spatial-frequency separation, Gaussian filtering, layer subtraction, OCR, CLI usage, and agent verification.">
 <meta name="robots" content="index, follow, max-image-preview:large">
-<link rel="canonical" href="https://decoy-font-decoder.vercel.app/docs">
+<link rel="canonical" href="https://decoyfont-decoder.vercel.app/docs">
 <link rel="icon" href="assets/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="assets/brand-icon.webp">
+<link rel="image_src" href="https://decoyfont-decoder.vercel.app/assets/og-image-v5.png">
+<meta itemprop="name" content="Decoy Font Decoder — Technical Documentation">
+<meta itemprop="description" content="How frequency-hidden text is reconstructed with classic computer vision.">
+<meta itemprop="image" content="https://decoyfont-decoder.vercel.app/assets/og-image-v5.png">
 <meta property="og:title" content="Decoy Font Decoder — Technical Documentation">
 <meta property="og:description" content="How frequency-hidden text is reconstructed with classic computer vision.">
 <meta property="og:type" content="article">
-<meta property="og:url" content="https://decoy-font-decoder.vercel.app/docs">
+<meta property="og:url" content="https://decoyfont-decoder.vercel.app/docs">
 <link rel="stylesheet" href="code-viewer.css">
-<meta property="og:image" content="https://decoy-font-decoder.vercel.app/assets/og-image-v4.webp">
-<meta property="og:image:type" content="image/webp">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://decoyfont-decoder.vercel.app/assets/og-image-v5.png">
+<meta property="og:image:url" content="https://decoyfont-decoder.vercel.app/assets/og-image-v5.png">
+<meta property="og:image:secure_url" content="https://decoyfont-decoder.vercel.app/assets/og-image-v5.png">
+<meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Decoy Font Decoder — the message is in the blur">
+<meta property="og:site_name" content="Decoy Font Decoder">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:domain" content="decoyfont-decoder.vercel.app">
+<meta name="twitter:url" content="https://decoyfont-decoder.vercel.app/docs">
+<meta name="twitter:title" content="Decoy Font Decoder — Technical Documentation">
+<meta name="twitter:description" content="How frequency-hidden text is reconstructed with classic computer vision.">
+<meta name="twitter:image" content="https://decoyfont-decoder.vercel.app/assets/og-image-v5.png">
+<meta name="twitter:image:alt" content="Decoy Font Decoder — the message is in the blur">
 <style>
   :root {
     --paper: #ffffff;
@@ -253,7 +268,7 @@
     filter: grayscale(1) contrast(1.12);
   }
   .signal-proof-panel:last-child .signal-proof-media img {
-    object-fit: contain;
+    object-fit: cover;
     object-position: center;
   }
   .signal-proof-caption {
@@ -495,7 +510,7 @@
     width: 100%;
     height: 100%;
     display: block;
-    object-fit: contain;
+    object-fit: cover;
   }
   .output-copy { padding: 24px 26px 28px; }
   .output-copy span {

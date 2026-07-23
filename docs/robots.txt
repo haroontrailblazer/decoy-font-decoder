@@ -1,6 +1,6 @@
 # ================================================================
 # robots.txt - Decoy Font Decoder
-# https://decoy-font-decoder.vercel.app
+# https://decoyfont-decoder.vercel.app
 # Last updated: 2026-07-22
 # ================================================================
 
@@ -88,4 +88,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://decoy-font-decoder.vercel.app/sitemap.xml
+Sitemap: https://decoyfont-decoder.vercel.app/sitemap.xml
