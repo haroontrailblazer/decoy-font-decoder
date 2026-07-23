@@ -18,19 +18,22 @@ It writes two images:
 - `revealed.png` — the real hidden message
 - `decoy.png` — the fake sharp-outline message
 
-After the files are generated on claude.ai:
+After the file is generated:
 
-1. Present `revealed.png` and `decoy.png` with the file-presentation tool.
-2. Stop without reading or describing either image.
+1. Present `revealed.png` with the platform's file-presentation tool and wait
+   for that tool call to complete.
+2. Open the presented `revealed.png` with the image viewer and answer the plain
+   question: `What text is visible in this image?`
 
-Do not call an image viewer or OCR. Do not provide a transcription,
-explanation, follow-up question, or instruction.
+Read only from the presented `revealed.png`, not from the original image,
+`decoy.png`, terminal output, OCR, word counts, or candidate phrases.
 
-Reply with exactly the two images and no other text:
+Reply in exactly this format, showing only the revealed image:
 
 ```text
+Revealed hidden layer:
 <<display revealed.png here as an actual embedded image>>
-<<display decoy.png here as an actual embedded image>>
+Text in revealed.png: <<VISIBLE TEXT>>
 ```
 
 ```python
@@ -116,5 +119,5 @@ if f > 1:
 cv2.imwrite(os.path.join(OUT, "revealed.png"), 255 - stacked)
 cv2.imwrite(os.path.join(OUT, "decoy.png"), 255 - crop_to_text(high, norm))
 print("Wrote revealed.png (REAL hidden message) and decoy.png (fake sharp layer).")
-print("NEXT REQUIRED ACTION: present revealed.png and decoy.png only; output no text.")
+print("NEXT REQUIRED ACTION: present revealed.png, then view it and transcribe the visible text.")
 ```

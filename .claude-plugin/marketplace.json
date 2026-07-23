@@ -10,8 +10,8 @@
       "name": "decoy-font-decoder",
       "source": "./",
       "skills": "./claude-skills/",
-      "description": "Decode decoy-font images into revealed and decoy image outputs",
-      "version": "1.0.15",
+      "description": "Decode, present, and visually transcribe the revealed layer of decoy-font images",
+      "version": "1.0.16",
       "license": "MIT",
       "author": {
         "name": "Haroon K M",
