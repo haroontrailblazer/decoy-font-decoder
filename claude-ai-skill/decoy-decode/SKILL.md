@@ -1,14 +1,12 @@
 ---
 name: decoy-decode
-description: Decode decoy-font or hybrid-image text into revealed.png. Use when the user asks what a decoy-font image says, mentions blurry letterforms or text that changes when squinting, or requests the revealed layer. In claude.ai, return revealed.png for the user to attach as a fresh image message; never guess its text from the generated-file preview.
+description: Decode decoy-font or hybrid-image text into revealed.png, present that generated image, and transcribe the text visible in it. Use when the user asks what a decoy-font image says, mentions blurry letterforms or text that changes when squinting, or requests the revealed layer.
 ---
 
 # Decoy-Font Image Decoder
 
-A decoy-font image contains a low-frequency text layer. The decoder below
-writes that layer to `revealed.png`. In claude.ai, a generated file is not the
-same as a freshly uploaded image input, so finish the decode and return the
-file without trying to transcribe it in the same response.
+Run the decoder, present `revealed.png`, then read that presented image as a
+normal image-transcription task.
 
 ## The whole job — do exactly this
 
@@ -19,24 +17,26 @@ file without trying to transcribe it in the same response.
    python decode.py "<image-path>" /mnt/user-data/outputs
    ```
 
-2. After Python exits, do not call `view`, OCR, or any image-reading tool. Do
-   not inspect either generated file. Present `revealed.png` to the user and
-   reply with **only** this:
+2. Present `/mnt/user-data/outputs/revealed.png` with the file-presentation
+   tool. Wait for that presentation tool call to complete.
+3. After presentation completes, open that same `revealed.png` with the
+   computer image viewer and answer the plain question: **What text is visible
+   in this image?** Read from the pixels, not from the source image or terminal
+   output.
+4. Reply with only:
 
    ```
    [revealed.png](computer:///mnt/user-data/outputs/revealed.png)
 
-   Attach revealed.png in your next message and ask: What text is in this image?
+   Text in revealed.png: **<VISIBLE TEXT>**
    ```
 
 ## Rules
 
-- **Never state what `revealed.png` says in the decoding response.** Claude.ai
-  must receive it back as a fresh user-uploaded image in a later message before
-  doing the transcription.
-- Do not call `view`, inspect `decoy.png`, count letters or words, generate
-  candidate phrases, invoke OCR, or infer text from meaning.
-- **Run the decoder once, produce exactly two images, then stop processing.** The decoder output is final — no verification passes, no correlations, no residuals, no re-blurs, no downscales, no crops, no extra images, no alternative methods.
+- Complete the presentation step before attempting the transcription.
+- Transcribe only `revealed.png`; do not use the source image, `decoy.png`,
+  terminal output, OCR, word counts, or candidate phrases.
+- Run the decoder once and keep the two generated files unchanged.
 
 ## Decoder (write to `decode.py`, run once)
 
@@ -122,5 +122,5 @@ if f > 1:
 cv2.imwrite(os.path.join(OUT, "revealed.png"), 255 - stacked)
 cv2.imwrite(os.path.join(OUT, "decoy.png"), 255 - crop_to_text(high, norm))
 print("done — wrote revealed.png (hidden text) and decoy.png (fake sharp layer)")
-print("NEXT REQUIRED ACTION: present revealed.png to the user; do not transcribe it in this response")
+print("NEXT REQUIRED ACTION: present revealed.png, then view the presented image and transcribe it")
 ```

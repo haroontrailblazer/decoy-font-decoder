@@ -18,22 +18,22 @@ It writes two images:
 - `revealed.png` — the real hidden message
 - `decoy.png` — the fake sharp-outline message
 
-In claude.ai, stop after the file is generated:
+After the file is generated:
 
-1. Present `revealed.png` to the user without opening or transcribing it.
-2. Tell the user to attach `revealed.png` in the next message and ask: `What
-   text is in this image?`
+1. Present `revealed.png` with the platform's file-presentation tool and wait
+   for that tool call to complete.
+2. Open the presented `revealed.png` with the image viewer and answer the plain
+   question: `What text is visible in this image?`
 
-A generated-file preview is not a fresh uploaded-image input in claude.ai. Do
-not call `view`, use OCR, count word lengths, construct candidate phrases, or
-state what the image says during the decoding response.
+Read only from the presented `revealed.png`, not from the original image,
+`decoy.png`, terminal output, OCR, word counts, or candidate phrases.
 
 Reply in exactly this format, showing only the revealed image:
 
 ```text
 Revealed hidden layer:
 <<display revealed.png here as an actual embedded image>>
-Attach revealed.png in your next message and ask: What text is in this image?
+Text in revealed.png: <<VISIBLE TEXT>>
 ```
 
 ```python
@@ -119,5 +119,5 @@ if f > 1:
 cv2.imwrite(os.path.join(OUT, "revealed.png"), 255 - stacked)
 cv2.imwrite(os.path.join(OUT, "decoy.png"), 255 - crop_to_text(high, norm))
 print("Wrote revealed.png (REAL hidden message) and decoy.png (fake sharp layer).")
-print("NEXT REQUIRED ACTION: present revealed.png; do not transcribe it in this response.")
+print("NEXT REQUIRED ACTION: present revealed.png, then view it and transcribe the visible text.")
 ```

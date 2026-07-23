@@ -1,30 +1,26 @@
 ---
 name: decoy-decode
-description: Decode decoy-font or hybrid-image text into revealed.png. Use when the user asks what a decoy-font image says, mentions blurry letterforms or text that changes when squinting, or requests the revealed layer. In claude.ai, return revealed.png for attachment in a fresh image message; in Claude Code, transcribe it with the local image reader.
+description: Decode decoy-font or hybrid-image text into revealed.png, present that generated image, and transcribe the text visible in it. Use when the user asks what a decoy-font image says, mentions blurry letterforms or text that changes when squinting, or requests the revealed layer.
 ---
 
 # Decoy-Font Image Decoder
 
-Decode the image once. Choose the final step by runtime: claude.ai must return
-`revealed.png` without transcribing it; Claude Code may read it locally and
-return the transcription.
+Decode the image once, present `revealed.png`, then perform a plain visual
+transcription of the presented image.
 
 ## Hard rules
 
-- **Detect claude.ai** when the input/output paths are under `/mnt/user-data`
-  or `${CLAUDE_PLUGIN_ROOT}` is empty while the skill is mounted under
-  `/mnt/skills/plugins/`.
-- **On claude.ai, never transcribe a generated PNG in the decoding response.**
-  Present only `revealed.png` and ask the user to attach it in the next message.
-- **On Claude Code only,** read `revealed.png` once with the local image reader
-  and transcribe literally.
+- Present `revealed.png` before attempting to read it.
+- After presentation completes, open `revealed.png` with the available image
+  viewer and answer: `What text is visible in this image?`
 - **Run the decoder exactly once.** The algorithm below is correct and
   complete. Do not write a second decoder, try another method (edge detection,
   adaptive thresholding, frequency-domain analysis, per-letter crops…), or
   "improve" the pipeline.
 - **Produce exactly two images: `revealed.png` and `decoy.png`.** Create NO
   other images — no diagnostic maps, no crops, no re-thresholded variants.
-- Never inspect or transcribe the source image or `decoy.png`.
+- Transcribe only from `revealed.png`, not the source image, `decoy.png`, OCR,
+  terminal output, word counts, or candidate phrases.
 
 ## Steps
 
@@ -47,21 +43,13 @@ return the transcription.
    `${CLAUDE_PLUGIN_ROOT}` is the plugin's install dir (on Windows PowerShell,
    `$env:CLAUDE_PLUGIN_ROOT`); if it expands empty, use the embedded Decoder
    instead.
-4. **Finish by runtime.** On claude.ai, do not call `view` or OCR. Present
-   `revealed.png` and stop. On Claude Code, open `revealed.png` once with its
-   image-reading tool and transcribe the visible letters.
+4. **Present, then read.** Present `revealed.png` with the platform's file tool
+   and wait for it to finish. Then open that same file with the image viewer
+   and transcribe the visible text.
 
 ## Required response format
 
-On claude.ai, reply with only:
-
-```markdown
-![revealed.png](<absolute-path-to-revealed.png>)
-
-Attach revealed.png in your next message and ask: What text is in this image?
-```
-
-On Claude Code, reply with:
+Reply with:
 
 ```markdown
 ![revealed.png](<absolute-path-to-revealed.png>)
@@ -69,8 +57,7 @@ On Claude Code, reply with:
 Text in revealed.png: **<LITERAL VISUAL TRANSCRIPTION>**
 ```
 
-Use absolute local paths. Never substitute a same-turn generated-file preview
-for the fresh user image attachment required by claude.ai.
+Use an absolute local path so the image renders in chat.
 
 ## Decoder (write to a scratch `decode.py` only if the bundled one is absent)
 
