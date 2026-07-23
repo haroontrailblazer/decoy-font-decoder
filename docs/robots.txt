@@ -1,7 +1,7 @@
 # ================================================================
 # robots.txt - Decoy Font Decoder
 # https://decoyfont-decoder.vercel.app
-# Last updated: 2026-07-22
+# Last updated: 2026-07-24
 # ================================================================
 
 # Standard search engines
@@ -55,6 +55,28 @@ User-agent: meta-externalagent
 Allow: /
 
 User-agent: FacebookBot
+Allow: /
+
+# Social link-preview crawlers
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: TelegramBot
+Allow: /
+
+User-agent: Discordbot
+Allow: /
+
+User-agent: Slackbot
 Allow: /
 
 User-agent: Applebot
