@@ -30,15 +30,13 @@ This writes `claude-ai-skill/decoy-decode.zip` containing only
 
    > What does this image really say?
 
-Claude loads the `decoy-decode` skill, runs the bundled decoder, presents
-`revealed.png`, then views that presented image and transcribes its visible
-text in the same response.
+Claude loads the `decoy-decode` skill, runs the bundled decoder, and presents
+only `revealed.png` and `decoy.png`. It does not transcribe or explain them.
 
 After replacing an older copy of this skill, start a **new chat** so the old
 instructions are not retained in the conversation. During a successful run,
-Claude should complete the file-presentation tool call before opening
-`revealed.png` with its image viewer. The presentation-first ordering mirrors
-the follow-up flow that reads the image correctly.
+Claude should finish immediately after presenting the two images. You can ask
+about either image in your next message.
 
 ## What's inside
 
@@ -51,8 +49,8 @@ the follow-up flow that reads the image correctly.
 ## Notes
 
 - The sandbox installs `opencv-python-headless` and `numpy` automatically.
-- The skill runs once and produces exactly two files (`revealed.png` and
-  `decoy.png`), then presents and transcribes only `revealed.png`.
+- The skill runs once, produces exactly two files (`revealed.png` and
+  `decoy.png`), presents both, and returns no text about their contents.
 - Same decoder ships as a `/decoy-decode` command + skill for **Claude Code**
   and a `$decoy-decode` skill for **Codex**. See the repository root README.
 

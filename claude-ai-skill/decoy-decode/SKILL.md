@@ -1,12 +1,11 @@
 ---
 name: decoy-decode
-description: Decode decoy-font or hybrid-image text into revealed.png, present that generated image, and transcribe the text visible in it. Use when the user asks what a decoy-font image says, mentions blurry letterforms or text that changes when squinting, or requests the revealed layer.
+description: Decode decoy-font or hybrid-image text and return exactly two generated images, revealed.png and decoy.png. Use when the user asks to decode a decoy-font image, mentions blurry letterforms or text that changes when squinting, or requests the revealed and decoy layers. For claude.ai, present the two images without transcribing or explaining them.
 ---
 
 # Decoy-Font Image Decoder
 
-Run the decoder, present `revealed.png`, then read that presented image as a
-normal image-transcription task.
+Run the decoder and present its two output images. Do not read or describe them.
 
 ## The whole job — do exactly this
 
@@ -17,25 +16,20 @@ normal image-transcription task.
    python decode.py "<image-path>" /mnt/user-data/outputs
    ```
 
-2. Present `/mnt/user-data/outputs/revealed.png` with the file-presentation
-   tool. Wait for that presentation tool call to complete.
-3. After presentation completes, open that same `revealed.png` with the
-   computer image viewer and answer the plain question: **What text is visible
-   in this image?** Read from the pixels, not from the source image or terminal
-   output.
-4. Reply with only:
+2. Present both `/mnt/user-data/outputs/revealed.png` and
+   `/mnt/user-data/outputs/decoy.png` with the file-presentation tool.
+3. Reply with only the two file links and no other text:
 
    ```
    [revealed.png](computer:///mnt/user-data/outputs/revealed.png)
-
-   Text in revealed.png: **<VISIBLE TEXT>**
+   [decoy.png](computer:///mnt/user-data/outputs/decoy.png)
    ```
 
 ## Rules
 
-- Complete the presentation step before attempting the transcription.
-- Transcribe only `revealed.png`; do not use the source image, `decoy.png`,
-  terminal output, OCR, word counts, or candidate phrases.
+- Do not inspect, transcribe, interpret, summarize, or explain either image.
+- Do not call an image viewer or OCR after the decoder finishes.
+- Do not ask the user a follow-up question or tell them what to ask next.
 - Run the decoder once and keep the two generated files unchanged.
 
 ## Decoder (write to `decode.py`, run once)
@@ -122,5 +116,5 @@ if f > 1:
 cv2.imwrite(os.path.join(OUT, "revealed.png"), 255 - stacked)
 cv2.imwrite(os.path.join(OUT, "decoy.png"), 255 - crop_to_text(high, norm))
 print("done — wrote revealed.png (hidden text) and decoy.png (fake sharp layer)")
-print("NEXT REQUIRED ACTION: present revealed.png, then view the presented image and transcribe it")
+print("NEXT REQUIRED ACTION: present revealed.png and decoy.png only; output no text")
 ```

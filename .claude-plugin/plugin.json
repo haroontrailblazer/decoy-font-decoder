@@ -1,10 +1,10 @@
 {
   "name": "decoy-font-decoder",
   "displayName": "Decoy Font Decoder",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "skills": "./claude-skills/",
   "commands": "./commands/",
-  "description": "Decode, present, and visually transcribe the revealed layer of decoy-font images",
+  "description": "Decode decoy-font images into revealed and decoy image outputs",
   "author": {
     "name": "Haroon K M",
     "email": "haroonint144@gmail.com"
